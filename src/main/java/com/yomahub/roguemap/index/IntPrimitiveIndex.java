@@ -180,8 +180,14 @@ public class IntPrimitiveIndex implements Index<Integer> {
 
     @Override
     public int serializedSize() {
-        // 原始类型索引暂不支持序列化
-        throw new UnsupportedOperationException("IntPrimitiveIndex 暂不支持序列化");
+        // 序列化格式：
+        // - 4 bytes: entry count
+        // - 对于每个有效 entry:
+        //   - 4 bytes: key (int)
+        //   - 8 bytes: offset (long)
+        //   - 4 bytes: size (int)
+        // 总计：4 + size * 16
+        return 4 + size * 16;
     }
 
     @Override

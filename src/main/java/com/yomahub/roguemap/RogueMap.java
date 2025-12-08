@@ -229,8 +229,12 @@ public class RogueMap<K, V> implements AutoCloseable {
             return 0;
         } else if (index instanceof SegmentedHashIndex) {
             return 1;
+        } else if (index instanceof LongPrimitiveIndex) {
+            return 2;
+        } else if (index instanceof IntPrimitiveIndex) {
+            return 3;
         }
-        // 原始类型索引暂不支持持久化，返回默认值
+        // 未知索引类型，返回默认值
         return 0;
     }
 
@@ -406,15 +410,20 @@ public class RogueMap<K, V> implements AutoCloseable {
         /**
          * 根据索引类型创建索引（用于恢复）
          *
-         * @param indexType 索引类型（0=HashIndex, 1=SegmentedHashIndex）
+         * @param indexType 索引类型（0=HashIndex, 1=SegmentedHashIndex, 2=LongPrimitiveIndex, 3=IntPrimitiveIndex）
          * @param keyCodec 键编解码器
          * @return 索引实例
          */
+        @SuppressWarnings("unchecked")
         private Index<K> createIndexFromType(int indexType, Codec<K> keyCodec) {
             if (indexType == 0) {
                 return new HashIndex<>(keyCodec, initialCapacity);
             } else if (indexType == 1) {
                 return new SegmentedHashIndex<>(keyCodec, segmentCount, initialCapacity);
+            } else if (indexType == 2) {
+                return (Index<K>) new LongPrimitiveIndex(initialCapacity);
+            } else if (indexType == 3) {
+                return (Index<K>) new IntPrimitiveIndex(initialCapacity);
             }
             throw new IllegalStateException("未知的索引类型: " + indexType);
         }
