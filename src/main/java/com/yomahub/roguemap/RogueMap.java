@@ -176,9 +176,62 @@ public class RogueMap<K, V> implements AutoCloseable {
 
     @Override
     public void close() {
+        // 如果是 MMAP 模式，保存索引
+        if (storage instanceof MmapStorage) {
+            saveMmapIndex();
+        }
+
         index.close();
         storage.close();
         allocator.close();
+    }
+
+    /**
+     * 保存 MMAP 索引到文件
+     */
+    private void saveMmapIndex() {
+        MmapStorage mmapStorage = (MmapStorage) storage;
+        MmapAllocator mmapAllocator = mmapStorage.getAllocator();
+
+        // 获取当前数据使用的偏移量
+        long currentDataOffset = allocator.usedMemory();
+
+        // 计算索引大小
+        int indexSize = index.serializedSize();
+
+        // 索引数据放在所有数据之后（避免覆盖数据）
+        long indexOffset = currentDataOffset;
+        long baseAddress = mmapAllocator.getBaseAddress();
+        long indexAddress = baseAddress + indexOffset;
+
+        // 序列化索引（使用相对偏移量）
+        index.serializeWithOffsets(indexAddress, baseAddress);
+
+        // 更新头部
+        com.yomahub.roguemap.storage.MmapFileHeader header =
+            new com.yomahub.roguemap.storage.MmapFileHeader();
+        header.setMagicNumber(com.yomahub.roguemap.storage.MmapFileHeader.MAGIC_NUMBER);
+        header.setVersion(com.yomahub.roguemap.storage.MmapFileHeader.VERSION);
+        header.setIndexType(getIndexType(index));
+        header.setEntryCount(index.size());
+        header.setCurrentOffset(currentDataOffset);
+        header.setIndexOffset(indexOffset);
+        header.setIndexSize(indexSize);
+
+        mmapAllocator.writeHeader(header);
+    }
+
+    /**
+     * 获取索引类型
+     */
+    private int getIndexType(Index<K> index) {
+        if (index instanceof HashIndex) {
+            return 0;
+        } else if (index instanceof SegmentedHashIndex) {
+            return 1;
+        }
+        // 原始类型索引暂不支持持久化，返回默认值
+        return 0;
     }
 
     /**
@@ -351,6 +404,47 @@ public class RogueMap<K, V> implements AutoCloseable {
         }
 
         /**
+         * 根据索引类型创建索引（用于恢复）
+         *
+         * @param indexType 索引类型（0=HashIndex, 1=SegmentedHashIndex）
+         * @param keyCodec 键编解码器
+         * @return 索引实例
+         */
+        private Index<K> createIndexFromType(int indexType, Codec<K> keyCodec) {
+            if (indexType == 0) {
+                return new HashIndex<>(keyCodec, initialCapacity);
+            } else if (indexType == 1) {
+                return new SegmentedHashIndex<>(keyCodec, segmentCount, initialCapacity);
+            }
+            throw new IllegalStateException("未知的索引类型: " + indexType);
+        }
+
+        /**
+         * 创建新索引（用于新文件）
+         *
+         * @param keyCodec 键编解码器
+         * @return 索引实例
+         */
+        @SuppressWarnings("unchecked")
+        private Index<K> createNewIndex(Codec<K> keyCodec) {
+            if (usePrimitiveIndex) {
+                // 使用原始类型索引（仅支持Long/Integer键）
+                if (keyCodec == PrimitiveCodecs.LONG) {
+                    return (Index<K>) new LongPrimitiveIndex(initialCapacity);
+                } else if (keyCodec == PrimitiveCodecs.INTEGER) {
+                    return (Index<K>) new IntPrimitiveIndex(initialCapacity);
+                } else {
+                    throw new IllegalStateException(
+                            "原始类型索引仅支持 Long 或 Integer 键，请使用 PrimitiveCodecs.LONG 或 PrimitiveCodecs.INTEGER");
+                }
+            } else if (useSegmentedIndex) {
+                return new SegmentedHashIndex<>(keyCodec, segmentCount, initialCapacity);
+            } else {
+                return new HashIndex<>(keyCodec, initialCapacity);
+            }
+        }
+
+        /**
          * 构建 RogueMap 实例
          *
          * @return 新的 RogueMap
@@ -368,6 +462,8 @@ public class RogueMap<K, V> implements AutoCloseable {
             Allocator allocator;
             StorageEngine storage;
 
+            Index<K> index;
+
             if (useMmap) {
                 // MMAP 模式
                 if (persistentFilePath == null || persistentFilePath.isEmpty()) {
@@ -376,28 +472,32 @@ public class RogueMap<K, V> implements AutoCloseable {
                 MmapAllocator mmapAllocator = new MmapAllocator(persistentFilePath, allocateSize);
                 allocator = mmapAllocator;
                 storage = new MmapStorage(mmapAllocator);
+
+                // 检查是否是已存在的文件
+                if (mmapAllocator.isExistingFile()) {
+                    // 恢复模式
+                    com.yomahub.roguemap.storage.MmapFileHeader header = mmapAllocator.readHeader();
+
+                    // 恢复 allocator 的 offset
+                    mmapAllocator.restoreOffset(header.getCurrentOffset());
+
+                    // 创建索引并恢复数据
+                    index = createIndexFromType(header.getIndexType(), keyCodec);
+
+                    if (header.getIndexSize() > 0) {
+                        long baseAddress = mmapAllocator.getBaseAddress();
+                        long indexAddress = baseAddress + header.getIndexOffset();
+                        index.deserializeWithOffsets(indexAddress, (int) header.getIndexSize(), baseAddress);
+                    }
+                } else {
+                    // 新文件模式
+                    index = createNewIndex(keyCodec);
+                }
             } else {
                 // 堆外内存模式
                 allocator = new SlabAllocator(maxMemory);
                 storage = new OffHeapStorage(allocator);
-            }
-
-            // 创建索引
-            Index<K> index;
-            if (usePrimitiveIndex) {
-                // 使用原始类型索引（仅支持Long/Integer键）
-                if (keyCodec == PrimitiveCodecs.LONG) {
-                    index = (Index<K>) new LongPrimitiveIndex(initialCapacity);
-                } else if (keyCodec == PrimitiveCodecs.INTEGER) {
-                    index = (Index<K>) new IntPrimitiveIndex(initialCapacity);
-                } else {
-                    throw new IllegalStateException(
-                            "原始类型索引仅支持 Long 或 Integer 键，请使用 PrimitiveCodecs.LONG 或 PrimitiveCodecs.INTEGER");
-                }
-            } else if (useSegmentedIndex) {
-                index = new SegmentedHashIndex<>(segmentCount, 16);
-            } else {
-                index = new HashIndex<>();
+                index = createNewIndex(keyCodec);
             }
 
             return new RogueMap<>(index, storage, keyCodec, valueCodec, allocator);

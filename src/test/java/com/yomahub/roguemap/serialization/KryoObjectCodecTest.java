@@ -1,7 +1,6 @@
 package com.yomahub.roguemap.serialization;
 
 import com.yomahub.roguemap.memory.UnsafeOps;
-import com.yomahub.roguemap.performance.UserData;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -34,18 +33,15 @@ class KryoObjectCodecTest {
     }
 
     @Test
-    void testEncodeDecodeUserData() {
-        KryoObjectCodec<UserData> codec = new KryoObjectCodec<>(UserData.class);
+    void testEncodeDecodeComplexObject() {
+        KryoObjectCodec<ComplexData> codec = new KryoObjectCodec<>(ComplexData.class);
 
-        UserData original = new UserData(
+        ComplexData original = new ComplexData(
                 12345L,
                 "john_doe",
                 "john@example.com",
                 30,
-                1000.50,
-                System.currentTimeMillis(),
-                "123 Main St, City",
-                "555-1234"
+                1000.50
         );
 
         // 计算大小
@@ -57,23 +53,20 @@ class KryoObjectCodecTest {
         assertEquals(size, written, "Written bytes should match calculated size");
 
         // 解码
-        UserData decoded = codec.decode(address);
+        ComplexData decoded = codec.decode(address);
 
         // 验证
         assertNotNull(decoded);
-        assertEquals(original.getUserId(), decoded.getUserId());
-        assertEquals(original.getUsername(), decoded.getUsername());
-        assertEquals(original.getEmail(), decoded.getEmail());
-        assertEquals(original.getAge(), decoded.getAge());
-        assertEquals(original.getBalance(), decoded.getBalance(), 0.001);
-        assertEquals(original.getLastLoginTime(), decoded.getLastLoginTime());
-        assertEquals(original.getAddress(), decoded.getAddress());
-        assertEquals(original.getPhoneNumber(), decoded.getPhoneNumber());
+        assertEquals(original.id, decoded.id);
+        assertEquals(original.name, decoded.name);
+        assertEquals(original.email, decoded.email);
+        assertEquals(original.age, decoded.age);
+        assertEquals(original.balance, decoded.balance, 0.001);
     }
 
     @Test
     void testEncodeDecodeNull() {
-        KryoObjectCodec<UserData> codec = new KryoObjectCodec<>(UserData.class);
+        KryoObjectCodec<ComplexData> codec = new KryoObjectCodec<>(ComplexData.class);
 
         // 计算 null 的大小
         int size = codec.calculateSize(null);
@@ -84,7 +77,7 @@ class KryoObjectCodecTest {
         assertEquals(4, written, "Null should write 4 bytes");
 
         // 解码 null
-        UserData decoded = codec.decode(address);
+        ComplexData decoded = codec.decode(address);
         assertNull(decoded, "Decoded value should be null");
     }
 
@@ -231,6 +224,28 @@ class KryoObjectCodecTest {
         @Override
         public String toString() {
             return "TestData{name='" + name + "', value=" + value + '}';
+        }
+    }
+
+    /**
+     * 测试用的复杂数据类
+     */
+    public static class ComplexData implements Serializable {
+        private long id;
+        private String name;
+        private String email;
+        private int age;
+        private double balance;
+
+        public ComplexData() {
+        }
+
+        public ComplexData(long id, String name, String email, int age, double balance) {
+            this.id = id;
+            this.name = name;
+            this.email = email;
+            this.age = age;
+            this.balance = balance;
         }
     }
 }

@@ -1,5 +1,6 @@
 package com.yomahub.roguemap.index;
 
+import com.yomahub.roguemap.memory.UnsafeOps;
 import java.util.concurrent.locks.StampedLock;
 
 /**
@@ -181,6 +182,24 @@ public class LongPrimitiveIndex implements Index<Long> {
         clear();
     }
 
+    @Override
+    public int serializedSize() {
+        // 原始类型索引暂不支持序列化
+        throw new UnsupportedOperationException("LongPrimitiveIndex 暂不支持序列化");
+    }
+
+    @Override
+    public int serialize(long address) {
+        // 原始类型索引暂不支持序列化
+        throw new UnsupportedOperationException("LongPrimitiveIndex 暂不支持序列化");
+    }
+
+    @Override
+    public void deserialize(long address, int size) {
+        // 原始类型索引暂不支持序列化
+        throw new UnsupportedOperationException("LongPrimitiveIndex 暂不支持序列化");
+    }
+
     /**
      * 线性探测查找键的位置
      * @return 键的索引，如果不存在返回-1
@@ -263,6 +282,72 @@ public class LongPrimitiveIndex implements Index<Long> {
         h *= 0xc4ceb9fe1a85ec53L;
         h ^= h >>> 33;
         return (int) h;
+    }
+
+    @Override
+    public int serializeWithOffsets(long address, long baseAddress) {
+        long currentAddr = address;
+
+        // 写入 entry count
+        UnsafeOps.putInt(currentAddr, size);
+        currentAddr += 4;
+
+        // 写入每个有效 entry
+        for (int i = 0; i < keys.length; i++) {
+            long key = keys[i];
+            if (key != EMPTY_KEY && key != DELETED_KEY) {
+                long addr = addresses[i];
+                if (addr != 0) {
+                    // 写入 key
+                    UnsafeOps.putLong(currentAddr, key);
+                    currentAddr += 8;
+
+                    // 写入相对偏移量
+                    long offset = addr - baseAddress;
+                    UnsafeOps.putLong(currentAddr, offset);
+                    currentAddr += 8;
+
+                    // 写入 size
+                    UnsafeOps.putInt(currentAddr, sizes[i]);
+                    currentAddr += 4;
+                }
+            }
+        }
+
+        return (int) (currentAddr - address);
+    }
+
+    @Override
+    public void deserializeWithOffsets(long address, int totalSize, long baseAddress) {
+        long currentAddr = address;
+
+        // 读取 entry count
+        int entryCount = UnsafeOps.getInt(currentAddr);
+        currentAddr += 4;
+
+        // 清空当前数据
+        clear();
+
+        // 读取每个 entry
+        for (int i = 0; i < entryCount; i++) {
+            // 读取 key
+            long key = UnsafeOps.getLong(currentAddr);
+            currentAddr += 8;
+
+            // 读取相对偏移量
+            long offset = UnsafeOps.getLong(currentAddr);
+            currentAddr += 8;
+
+            // 重新计算绝对内存地址
+            long addr = baseAddress + offset;
+
+            // 读取 size
+            int sz = UnsafeOps.getInt(currentAddr);
+            currentAddr += 4;
+
+            // 插入到表中
+            put(key, addr, sz);
+        }
     }
 
     /**

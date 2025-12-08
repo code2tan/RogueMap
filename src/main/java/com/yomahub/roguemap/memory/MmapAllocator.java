@@ -47,13 +47,17 @@ public class MmapAllocator implements Allocator {
 
         this.file = new File(filePath);
         this.fileSize = fileSize;
-        this.currentOffset = new AtomicLong(0);
+        // 数据从 HEADER_SIZE 之后开始分配
+        this.currentOffset = new AtomicLong(com.yomahub.roguemap.storage.MmapFileHeader.HEADER_SIZE);
         this.segments = new ArrayList<>();
         this.segmentBaseAddresses = new ArrayList<>();
 
         // 计算需要的分段数
         this.segmentCount = (int) ((fileSize + MAX_SEGMENT_SIZE - 1) / MAX_SEGMENT_SIZE);
         this.segmentSize = MAX_SEGMENT_SIZE;
+
+        // 检查文件是否已存在
+        boolean fileExists = file.exists() && file.length() > 0;
 
         try {
             // 确保父目录存在
@@ -66,8 +70,17 @@ public class MmapAllocator implements Allocator {
             this.raf = new RandomAccessFile(file, "rw");
             this.channel = raf.getChannel();
 
-            // 预分配文件大小
-            raf.setLength(fileSize);
+            if (!fileExists) {
+                // 新文件：预分配空间
+                raf.setLength(fileSize);
+            } else {
+                // 现有文件：不要 setLength，保留数据
+                long existingSize = file.length();
+                if (existingSize < fileSize) {
+                    // 只在需要时扩展
+                    raf.setLength(fileSize);
+                }
+            }
 
             // 创建内存映射分段
             long remainingSize = fileSize;
@@ -86,10 +99,68 @@ public class MmapAllocator implements Allocator {
                 remainingSize -= size;
             }
 
+            // 注意：不在这里初始化头部，而是在第一次 close() 时初始化
+            // 这样可以区分新文件和已有数据的文件
+
         } catch (Exception e) {
             close();
             throw new RuntimeException("创建内存映射文件失败: " + filePath, e);
         }
+    }
+
+    /**
+     * 初始化文件头（新文件）
+     */
+    private void initializeHeader() {
+        com.yomahub.roguemap.storage.MmapFileHeader header =
+            new com.yomahub.roguemap.storage.MmapFileHeader();
+        header.setMagicNumber(com.yomahub.roguemap.storage.MmapFileHeader.MAGIC_NUMBER);
+        header.setVersion(com.yomahub.roguemap.storage.MmapFileHeader.VERSION);
+        header.setEntryCount(0);
+        header.setCurrentOffset(com.yomahub.roguemap.storage.MmapFileHeader.HEADER_SIZE);  // 头部之后开始
+        header.setIndexOffset(0);
+        header.setIndexSize(0);
+
+        long baseAddress = segmentBaseAddresses.get(0);
+        header.write(baseAddress);
+    }
+
+    /**
+     * 检查文件是否已初始化
+     */
+    public boolean isExistingFile() {
+        long baseAddress = segmentBaseAddresses.get(0);
+        return com.yomahub.roguemap.storage.MmapFileHeader.isValidHeader(baseAddress);
+    }
+
+    /**
+     * 读取文件头
+     */
+    public com.yomahub.roguemap.storage.MmapFileHeader readHeader() {
+        long baseAddress = segmentBaseAddresses.get(0);
+        return com.yomahub.roguemap.storage.MmapFileHeader.read(baseAddress);
+    }
+
+    /**
+     * 写入文件头
+     */
+    public void writeHeader(com.yomahub.roguemap.storage.MmapFileHeader header) {
+        long baseAddress = segmentBaseAddresses.get(0);
+        header.write(baseAddress);
+    }
+
+    /**
+     * 恢复分配偏移量（用于数据恢复）
+     */
+    public void restoreOffset(long offset) {
+        this.currentOffset.set(offset);
+    }
+
+    /**
+     * 获取第一个分段的基地址
+     */
+    public long getBaseAddress() {
+        return segmentBaseAddresses.get(0);
     }
 
     @Override

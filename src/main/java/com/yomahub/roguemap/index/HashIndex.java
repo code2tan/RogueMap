@@ -1,5 +1,9 @@
 package com.yomahub.roguemap.index;
 
+import com.yomahub.roguemap.memory.UnsafeOps;
+import com.yomahub.roguemap.serialization.Codec;
+
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -12,14 +16,24 @@ public class HashIndex<K> implements Index<K> {
 
     private final ConcurrentHashMap<K, Entry> map;
     private final AtomicInteger size;
+    private final Codec<K> keyCodec;  // 用于序列化键
 
     public HashIndex() {
-        this(16);
+        this(null, 16);
     }
 
     public HashIndex(int initialCapacity) {
+        this(null, initialCapacity);
+    }
+
+    public HashIndex(Codec<K> keyCodec) {
+        this(keyCodec, 16);
+    }
+
+    public HashIndex(Codec<K> keyCodec, int initialCapacity) {
         this.map = new ConcurrentHashMap<>(initialCapacity);
         this.size = new AtomicInteger(0);
+        this.keyCodec = keyCodec;
     }
 
     @Override
@@ -95,6 +109,191 @@ public class HashIndex<K> implements Index<K> {
     @Override
     public void close() {
         clear();
+    }
+
+    @Override
+    public int serializedSize() {
+        if (keyCodec == null) {
+            throw new UnsupportedOperationException("无法序列化：keyCodec 为 null");
+        }
+
+        int totalSize = 4;  // entry count (4 bytes)
+
+        for (Map.Entry<K, Entry> entry : map.entrySet()) {
+            K key = entry.getKey();
+            int keySize = keyCodec.calculateSize(key);
+            if (keySize < 0) {
+                throw new IllegalStateException("键的大小不能为负数");
+            }
+            // 4 bytes (key size) + key bytes + 8 bytes (address) + 4 bytes (size)
+            totalSize += 4 + keySize + 8 + 4;
+        }
+
+        return totalSize;
+    }
+
+    @Override
+    public int serialize(long address) {
+        if (keyCodec == null) {
+            throw new UnsupportedOperationException("无法序列化：keyCodec 为 null");
+        }
+
+        long currentAddr = address;
+
+        // 写入 entry count
+        UnsafeOps.putInt(currentAddr, map.size());
+        currentAddr += 4;
+
+        // 写入每个 entry
+        for (Map.Entry<K, Entry> entry : map.entrySet()) {
+            K key = entry.getKey();
+
+            // 计算键大小并编码
+            int keySize = keyCodec.calculateSize(key);
+            if (keySize < 0) {
+                throw new IllegalStateException("键的大小不能为负数");
+            }
+
+            // 写入 key size
+            UnsafeOps.putInt(currentAddr, keySize);
+            currentAddr += 4;
+
+            // 写入 key bytes
+            int actualKeySize = keyCodec.encode(currentAddr, key);
+            currentAddr += actualKeySize;
+
+            // 写入 address
+            UnsafeOps.putLong(currentAddr, entry.getValue().address);
+            currentAddr += 8;
+
+            // 写入 size
+            UnsafeOps.putInt(currentAddr, entry.getValue().size);
+            currentAddr += 4;
+        }
+
+        return (int) (currentAddr - address);
+    }
+
+    @Override
+    public void deserialize(long address, int totalSize) {
+        if (keyCodec == null) {
+            throw new UnsupportedOperationException("无法反序列化：keyCodec 为 null");
+        }
+
+        map.clear();
+        long currentAddr = address;
+
+        // 读取 entry count
+        int entryCount = UnsafeOps.getInt(currentAddr);
+        currentAddr += 4;
+
+        // 读取每个 entry
+        for (int i = 0; i < entryCount; i++) {
+            // 读取 key size
+            int keySize = UnsafeOps.getInt(currentAddr);
+            currentAddr += 4;
+
+            // 读取 key
+            K key = keyCodec.decode(currentAddr);
+            currentAddr += keySize;
+
+            // 读取 address
+            long addr = UnsafeOps.getLong(currentAddr);
+            currentAddr += 8;
+
+            // 读取 size
+            int sz = UnsafeOps.getInt(currentAddr);
+            currentAddr += 4;
+
+            // 插入到 map
+            map.put(key, new Entry(addr, sz));
+        }
+
+        this.size.set(entryCount);
+    }
+
+    @Override
+    public int serializeWithOffsets(long address, long baseAddress) {
+        if (keyCodec == null) {
+            throw new UnsupportedOperationException("无法序列化：keyCodec 为 null");
+        }
+
+        long currentAddr = address;
+
+        // 写入 entry count
+        UnsafeOps.putInt(currentAddr, map.size());
+        currentAddr += 4;
+
+        // 写入每个 entry
+        for (Map.Entry<K, Entry> entry : map.entrySet()) {
+            K key = entry.getKey();
+
+            // 计算键大小并编码
+            int keySize = keyCodec.calculateSize(key);
+            if (keySize < 0) {
+                throw new IllegalStateException("键的大小不能为负数");
+            }
+
+            // 写入 key size
+            UnsafeOps.putInt(currentAddr, keySize);
+            currentAddr += 4;
+
+            // 写入 key bytes
+            int actualKeySize = keyCodec.encode(currentAddr, key);
+            currentAddr += actualKeySize;
+
+            // 写入相对偏移量（而不是绝对地址）
+            long offset = entry.getValue().address - baseAddress;
+            UnsafeOps.putLong(currentAddr, offset);
+            currentAddr += 8;
+
+            // 写入 size
+            UnsafeOps.putInt(currentAddr, entry.getValue().size);
+            currentAddr += 4;
+        }
+
+        return (int) (currentAddr - address);
+    }
+
+    @Override
+    public void deserializeWithOffsets(long address, int totalSize, long baseAddress) {
+        if (keyCodec == null) {
+            throw new UnsupportedOperationException("无法反序列化：keyCodec 为 null");
+        }
+
+        map.clear();
+        long currentAddr = address;
+
+        // 读取 entry count
+        int entryCount = UnsafeOps.getInt(currentAddr);
+        currentAddr += 4;
+
+        // 读取每个 entry
+        for (int i = 0; i < entryCount; i++) {
+            // 读取 key size
+            int keySize = UnsafeOps.getInt(currentAddr);
+            currentAddr += 4;
+
+            // 读取 key
+            K key = keyCodec.decode(currentAddr);
+            currentAddr += keySize;
+
+            // 读取相对偏移量
+            long offset = UnsafeOps.getLong(currentAddr);
+            currentAddr += 8;
+
+            // 重新计算绝对内存地址
+            long addr = baseAddress + offset;
+
+            // 读取 size
+            int sz = UnsafeOps.getInt(currentAddr);
+            currentAddr += 4;
+
+            // 插入到 map
+            map.put(key, new Entry(addr, sz));
+        }
+
+        this.size.set(entryCount);
     }
 
     /**

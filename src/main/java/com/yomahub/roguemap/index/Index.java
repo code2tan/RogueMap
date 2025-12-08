@@ -65,4 +65,45 @@ public interface Index<K> {
      * 关闭索引并释放资源
      */
     void close();
+
+    /**
+     * 序列化索引到内存地址（用于持久化）
+     *
+     * @param address 目标地址
+     * @return 写入的字节数
+     */
+    int serialize(long address);
+
+    /**
+     * 从内存地址反序列化索引（用于恢复）
+     *
+     * @param address 源地址
+     * @param size 数据大小
+     */
+    void deserialize(long address, int size);
+
+    /**
+     * 计算序列化后的大小
+     *
+     * @return 字节数
+     */
+    int serializedSize();
+
+    /**
+     * 序列化索引到内存地址（使用相对偏移量，用于 MMAP 持久化）
+     *
+     * @param address 目标地址
+     * @param baseAddress 基础地址，用于计算相对偏移量
+     * @return 写入的字节数
+     */
+    int serializeWithOffsets(long address, long baseAddress);
+
+    /**
+     * 从内存地址反序列化索引（使用相对偏移量，用于 MMAP 恢复）
+     *
+     * @param address 源地址
+     * @param size 数据大小
+     * @param baseAddress 基础地址，用于重新计算内存地址
+     */
+    void deserializeWithOffsets(long address, int size, long baseAddress);
 }
