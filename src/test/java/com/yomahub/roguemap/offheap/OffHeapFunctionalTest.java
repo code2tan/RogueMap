@@ -33,11 +33,10 @@ public class OffHeapFunctionalTest {
     @BeforeEach
     public void setUp() {
         // 每个测试前创建新的 map
-        map = RogueMap.<String, String>builder()
+        map = RogueMap.<String, String>offHeap()
                 .keyCodec(new StringCodec())
                 .valueCodec(new StringCodec())
                 .maxMemory(100 * 1024 * 1024) // 100MB
-                .offHeap()
                 .build();
     }
 
@@ -169,11 +168,10 @@ public class OffHeapFunctionalTest {
 
     @Test
     public void testLongToLongMap() {
-        RogueMap<Long, Long> longMap = RogueMap.<Long, Long>builder()
+        RogueMap<Long, Long> longMap = RogueMap.<Long, Long>offHeap()
                 .keyCodec(PrimitiveCodecs.LONG)
                 .valueCodec(PrimitiveCodecs.LONG)
                 .maxMemory(10 * 1024 * 1024)
-                .offHeap()
                 .build();
 
         try {
@@ -188,11 +186,10 @@ public class OffHeapFunctionalTest {
 
     @Test
     public void testIntegerToIntegerMap() {
-        RogueMap<Integer, Integer> intMap = RogueMap.<Integer, Integer>builder()
+        RogueMap<Integer, Integer> intMap = RogueMap.<Integer, Integer>offHeap()
                 .keyCodec(PrimitiveCodecs.INTEGER)
                 .valueCodec(PrimitiveCodecs.INTEGER)
                 .maxMemory(10 * 1024 * 1024)
-                .offHeap()
                 .build();
 
         try {
@@ -207,11 +204,10 @@ public class OffHeapFunctionalTest {
 
     @Test
     public void testDoubleMap() {
-        RogueMap<Integer, Double> doubleMap = RogueMap.<Integer, Double>builder()
+        RogueMap<Integer, Double> doubleMap = RogueMap.<Integer, Double>offHeap()
                 .keyCodec(PrimitiveCodecs.INTEGER)
                 .valueCodec(PrimitiveCodecs.DOUBLE)
                 .maxMemory(10 * 1024 * 1024)
-                .offHeap()
                 .build();
 
         try {
@@ -226,11 +222,10 @@ public class OffHeapFunctionalTest {
 
     @Test
     public void testObjectMap() {
-        RogueMap<String, TestUser> objectMap = RogueMap.<String, TestUser>builder()
+        RogueMap<String, TestUser> objectMap = RogueMap.<String, TestUser>offHeap()
                 .keyCodec(new StringCodec())
                 .valueCodec(KryoObjectCodec.create(TestUser.class))
                 .maxMemory(10 * 1024 * 1024)
-                .offHeap()
                 .build();
 
         try {
@@ -253,11 +248,10 @@ public class OffHeapFunctionalTest {
 
     @Test
     public void testBasicIndex() {
-        RogueMap<String, String> basicMap = RogueMap.<String, String>builder()
+        RogueMap<String, String> basicMap = RogueMap.<String, String>offHeap()
                 .keyCodec(new StringCodec())
                 .valueCodec(new StringCodec())
                 .maxMemory(10 * 1024 * 1024)
-                .offHeap()
                 .basicIndex()
                 .build();
 
@@ -273,11 +267,10 @@ public class OffHeapFunctionalTest {
 
     @Test
     public void testSegmentedIndex() {
-        RogueMap<String, String> segmentedMap = RogueMap.<String, String>builder()
+        RogueMap<String, String> segmentedMap = RogueMap.<String, String>offHeap()
                 .keyCodec(new StringCodec())
                 .valueCodec(new StringCodec())
                 .maxMemory(10 * 1024 * 1024)
-                .offHeap()
                 .segmentedIndex(32)
                 .build();
 
@@ -293,11 +286,10 @@ public class OffHeapFunctionalTest {
 
     @Test
     public void testPrimitiveIndexLong() {
-        RogueMap<Long, String> primitiveMap = RogueMap.<Long, String>builder()
+        RogueMap<Long, String> primitiveMap = RogueMap.<Long, String>offHeap()
                 .keyCodec(PrimitiveCodecs.LONG)
                 .valueCodec(new StringCodec())
                 .maxMemory(10 * 1024 * 1024)
-                .offHeap()
                 .primitiveIndex()
                 .build();
 
@@ -313,11 +305,10 @@ public class OffHeapFunctionalTest {
 
     @Test
     public void testPrimitiveIndexInteger() {
-        RogueMap<Integer, String> primitiveMap = RogueMap.<Integer, String>builder()
+        RogueMap<Integer, String> primitiveMap = RogueMap.<Integer, String>offHeap()
                 .keyCodec(PrimitiveCodecs.INTEGER)
                 .valueCodec(new StringCodec())
                 .maxMemory(10 * 1024 * 1024)
-                .offHeap()
                 .primitiveIndex()
                 .build();
 
@@ -353,11 +344,10 @@ public class OffHeapFunctionalTest {
 
     @Test
     public void testConcurrentPut() throws InterruptedException {
-        RogueMap<String, String> concurrentMap = RogueMap.<String, String>builder()
+        RogueMap<String, String> concurrentMap = RogueMap.<String, String>offHeap()
                 .keyCodec(new StringCodec())
                 .valueCodec(new StringCodec())
                 .maxMemory(100 * 1024 * 1024)
-                .offHeap()
                 .segmentedIndex(64)
                 .build();
 
@@ -391,11 +381,10 @@ public class OffHeapFunctionalTest {
 
     @Test
     public void testConcurrentReadWrite() throws InterruptedException {
-        RogueMap<String, String> concurrentMap = RogueMap.<String, String>builder()
+        RogueMap<String, String> concurrentMap = RogueMap.<String, String>offHeap()
                 .keyCodec(new StringCodec())
                 .valueCodec(new StringCodec())
                 .maxMemory(100 * 1024 * 1024)
-                .offHeap()
                 .segmentedIndex(64)
                 .build();
 
@@ -486,7 +475,7 @@ public class OffHeapFunctionalTest {
     @Test
     public void testRequireKeyCodec() {
         assertThrows(IllegalStateException.class, () -> {
-            RogueMap.<String, String>builder()
+            RogueMap.<String, String>offHeap()
                     .valueCodec(new StringCodec())
                     .maxMemory(10 * 1024 * 1024)
                     .build();
@@ -496,7 +485,7 @@ public class OffHeapFunctionalTest {
     @Test
     public void testRequireValueCodec() {
         assertThrows(IllegalStateException.class, () -> {
-            RogueMap.<String, String>builder()
+            RogueMap.<String, String>offHeap()
                     .keyCodec(new StringCodec())
                     .maxMemory(10 * 1024 * 1024)
                     .build();
@@ -506,7 +495,7 @@ public class OffHeapFunctionalTest {
     @Test
     public void testInvalidMaxMemory() {
         assertThrows(IllegalArgumentException.class, () -> {
-            RogueMap.<String, String>builder()
+            RogueMap.<String, String>offHeap()
                     .keyCodec(new StringCodec())
                     .valueCodec(new StringCodec())
                     .maxMemory(0)
@@ -517,7 +506,7 @@ public class OffHeapFunctionalTest {
     @Test
     public void testInvalidInitialCapacity() {
         assertThrows(IllegalArgumentException.class, () -> {
-            RogueMap.<String, String>builder()
+            RogueMap.<String, String>offHeap()
                     .keyCodec(new StringCodec())
                     .valueCodec(new StringCodec())
                     .maxMemory(10 * 1024 * 1024)

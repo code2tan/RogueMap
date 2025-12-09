@@ -52,7 +52,7 @@ public class MmapFunctionalTest {
     @Test
     public void testBasicPersistence() {
         // 第一阶段：写入数据
-        RogueMap<String, String> map1 = RogueMap.<String, String>builder()
+        RogueMap<String, String> map1 = RogueMap.<String, String>mmap()
                 .persistent(TEST_FILE)
                 .allocateSize(10 * 1024 * 1024L)
                 .keyCodec(new StringCodec())
@@ -70,7 +70,7 @@ public class MmapFunctionalTest {
         assertTrue(file.length() > 0);
 
         // 第二阶段：重新打开并验证
-        RogueMap<String, String> map2 = RogueMap.<String, String>builder()
+        RogueMap<String, String> map2 = RogueMap.<String, String>mmap()
                 .persistent(TEST_FILE)
                 .allocateSize(10 * 1024 * 1024L)
                 .keyCodec(new StringCodec())
@@ -88,7 +88,7 @@ public class MmapFunctionalTest {
     @Test
     public void testSingleEntry() {
         // 第一阶段：写入数据
-        RogueMap<String, String> map1 = RogueMap.<String, String>builder()
+        RogueMap<String, String> map1 = RogueMap.<String, String>mmap()
                 .persistent(TEST_FILE)
                 .allocateSize(10 * 1024 * 1024L)
                 .keyCodec(new StringCodec())
@@ -99,7 +99,7 @@ public class MmapFunctionalTest {
         map1.close();
 
         // 第二阶段：读取数据
-        RogueMap<String, String> map2 = RogueMap.<String, String>builder()
+        RogueMap<String, String> map2 = RogueMap.<String, String>mmap()
                 .persistent(TEST_FILE)
                 .allocateSize(10 * 1024 * 1024L)
                 .keyCodec(new StringCodec())
@@ -114,7 +114,7 @@ public class MmapFunctionalTest {
     @Test
     public void testEmptyMapPersistence() {
         // 测试空 map 的持久化
-        RogueMap<String, String> map1 = RogueMap.<String, String>builder()
+        RogueMap<String, String> map1 = RogueMap.<String, String>mmap()
                 .persistent(TEST_FILE)
                 .allocateSize(10 * 1024 * 1024L)
                 .keyCodec(new StringCodec())
@@ -125,7 +125,7 @@ public class MmapFunctionalTest {
         map1.close();
 
         // 重新打开空 map
-        RogueMap<String, String> map2 = RogueMap.<String, String>builder()
+        RogueMap<String, String> map2 = RogueMap.<String, String>mmap()
                 .persistent(TEST_FILE)
                 .allocateSize(10 * 1024 * 1024L)
                 .keyCodec(new StringCodec())
@@ -142,7 +142,7 @@ public class MmapFunctionalTest {
     @Test
     public void testUpdatePersistence() {
         // 第一阶段：写入初始数据
-        RogueMap<String, String> map1 = RogueMap.<String, String>builder()
+        RogueMap<String, String> map1 = RogueMap.<String, String>mmap()
                 .persistent(TEST_FILE)
                 .allocateSize(10 * 1024 * 1024L)
                 .keyCodec(new StringCodec())
@@ -154,7 +154,7 @@ public class MmapFunctionalTest {
         map1.close();
 
         // 第二阶段：重新打开,更新和添加数据
-        RogueMap<String, String> map2 = RogueMap.<String, String>builder()
+        RogueMap<String, String> map2 = RogueMap.<String, String>mmap()
                 .persistent(TEST_FILE)
                 .allocateSize(10 * 1024 * 1024L)
                 .keyCodec(new StringCodec())
@@ -167,7 +167,7 @@ public class MmapFunctionalTest {
         map2.close();
 
         // 第三阶段：再次打开,验证更新和新增的数据
-        RogueMap<String, String> map3 = RogueMap.<String, String>builder()
+        RogueMap<String, String> map3 = RogueMap.<String, String>mmap()
                 .persistent(TEST_FILE)
                 .allocateSize(10 * 1024 * 1024L)
                 .keyCodec(new StringCodec())
@@ -184,7 +184,7 @@ public class MmapFunctionalTest {
     @Test
     public void testMultipleUpdates() {
         // 测试同一个键的多次更新
-        RogueMap<String, String> map1 = RogueMap.<String, String>builder()
+        RogueMap<String, String> map1 = RogueMap.<String, String>mmap()
                 .persistent(TEST_FILE)
                 .allocateSize(10 * 1024 * 1024L)
                 .keyCodec(new StringCodec())
@@ -195,7 +195,7 @@ public class MmapFunctionalTest {
         map1.close();
 
         // 第二次打开并更新
-        RogueMap<String, String> map2 = RogueMap.<String, String>builder()
+        RogueMap<String, String> map2 = RogueMap.<String, String>mmap()
                 .persistent(TEST_FILE)
                 .allocateSize(10 * 1024 * 1024L)
                 .keyCodec(new StringCodec())
@@ -205,7 +205,7 @@ public class MmapFunctionalTest {
         map2.close();
 
         // 第三次打开并更新
-        RogueMap<String, String> map3 = RogueMap.<String, String>builder()
+        RogueMap<String, String> map3 = RogueMap.<String, String>mmap()
                 .persistent(TEST_FILE)
                 .allocateSize(10 * 1024 * 1024L)
                 .keyCodec(new StringCodec())
@@ -215,7 +215,7 @@ public class MmapFunctionalTest {
         map3.close();
 
         // 验证最终值
-        RogueMap<String, String> map4 = RogueMap.<String, String>builder()
+        RogueMap<String, String> map4 = RogueMap.<String, String>mmap()
                 .persistent(TEST_FILE)
                 .allocateSize(10 * 1024 * 1024L)
                 .keyCodec(new StringCodec())
@@ -230,7 +230,7 @@ public class MmapFunctionalTest {
     @Test
     public void testDeletePersistence() {
         // 第一阶段：写入数据
-        RogueMap<String, String> map1 = RogueMap.<String, String>builder()
+        RogueMap<String, String> map1 = RogueMap.<String, String>mmap()
                 .persistent(TEST_FILE)
                 .allocateSize(10 * 1024 * 1024L)
                 .keyCodec(new StringCodec())
@@ -243,7 +243,7 @@ public class MmapFunctionalTest {
         map1.close();
 
         // 第二阶段：重新打开,删除数据
-        RogueMap<String, String> map2 = RogueMap.<String, String>builder()
+        RogueMap<String, String> map2 = RogueMap.<String, String>mmap()
                 .persistent(TEST_FILE)
                 .allocateSize(10 * 1024 * 1024L)
                 .keyCodec(new StringCodec())
@@ -255,7 +255,7 @@ public class MmapFunctionalTest {
         map2.close();
 
         // 第三阶段：再次打开,验证删除
-        RogueMap<String, String> map3 = RogueMap.<String, String>builder()
+        RogueMap<String, String> map3 = RogueMap.<String, String>mmap()
                 .persistent(TEST_FILE)
                 .allocateSize(10 * 1024 * 1024L)
                 .keyCodec(new StringCodec())
@@ -272,7 +272,7 @@ public class MmapFunctionalTest {
     @Test
     public void testDeleteAllEntries() {
         // 测试删除所有条目
-        RogueMap<String, String> map1 = RogueMap.<String, String>builder()
+        RogueMap<String, String> map1 = RogueMap.<String, String>mmap()
                 .persistent(TEST_FILE)
                 .allocateSize(10 * 1024 * 1024L)
                 .keyCodec(new StringCodec())
@@ -284,7 +284,7 @@ public class MmapFunctionalTest {
         map1.close();
 
         // 删除所有条目
-        RogueMap<String, String> map2 = RogueMap.<String, String>builder()
+        RogueMap<String, String> map2 = RogueMap.<String, String>mmap()
                 .persistent(TEST_FILE)
                 .allocateSize(10 * 1024 * 1024L)
                 .keyCodec(new StringCodec())
@@ -295,7 +295,7 @@ public class MmapFunctionalTest {
         map2.close();
 
         // 验证为空
-        RogueMap<String, String> map3 = RogueMap.<String, String>builder()
+        RogueMap<String, String> map3 = RogueMap.<String, String>mmap()
                 .persistent(TEST_FILE)
                 .allocateSize(10 * 1024 * 1024L)
                 .keyCodec(new StringCodec())
@@ -311,7 +311,7 @@ public class MmapFunctionalTest {
     public void testMultipleSessions() {
         // 模拟多次启停场景
         for (int session = 0; session < 5; session++) {
-            RogueMap<String, String> map = RogueMap.<String, String>builder()
+            RogueMap<String, String> map = RogueMap.<String, String>mmap()
                     .persistent(TEST_FILE)
                     .allocateSize(10 * 1024 * 1024L)
                     .keyCodec(new StringCodec())
@@ -334,7 +334,7 @@ public class MmapFunctionalTest {
     @Test
     public void testSessionWithMixedOperations() {
         // 第一个会话：添加数据
-        RogueMap<String, String> map1 = RogueMap.<String, String>builder()
+        RogueMap<String, String> map1 = RogueMap.<String, String>mmap()
                 .persistent(TEST_FILE)
                 .allocateSize(10 * 1024 * 1024L)
                 .keyCodec(new StringCodec())
@@ -346,7 +346,7 @@ public class MmapFunctionalTest {
         map1.close();
 
         // 第二个会话：删除一些,更新一些,添加一些
-        RogueMap<String, String> map2 = RogueMap.<String, String>builder()
+        RogueMap<String, String> map2 = RogueMap.<String, String>mmap()
                 .persistent(TEST_FILE)
                 .allocateSize(10 * 1024 * 1024L)
                 .keyCodec(new StringCodec())
@@ -359,7 +359,7 @@ public class MmapFunctionalTest {
         map2.close();
 
         // 第三个会话：验证
-        RogueMap<String, String> map3 = RogueMap.<String, String>builder()
+        RogueMap<String, String> map3 = RogueMap.<String, String>mmap()
                 .persistent(TEST_FILE)
                 .allocateSize(10 * 1024 * 1024L)
                 .keyCodec(new StringCodec())
@@ -382,7 +382,7 @@ public class MmapFunctionalTest {
 
         try {
             // 写入
-            RogueMap<Long, Long> map1 = RogueMap.<Long, Long>builder()
+            RogueMap<Long, Long> map1 = RogueMap.<Long, Long>mmap()
                     .persistent(testFile)
                     .allocateSize(10 * 1024 * 1024L)
                     .keyCodec(PrimitiveCodecs.LONG)
@@ -395,7 +395,7 @@ public class MmapFunctionalTest {
             map1.close();
 
             // 读取验证
-            RogueMap<Long, Long> map2 = RogueMap.<Long, Long>builder()
+            RogueMap<Long, Long> map2 = RogueMap.<Long, Long>mmap()
                     .persistent(testFile)
                     .allocateSize(10 * 1024 * 1024L)
                     .keyCodec(PrimitiveCodecs.LONG)
@@ -417,7 +417,7 @@ public class MmapFunctionalTest {
         String testFile = "target/test-mmap-int.db";
 
         try {
-            RogueMap<Integer, Integer> map1 = RogueMap.<Integer, Integer>builder()
+            RogueMap<Integer, Integer> map1 = RogueMap.<Integer, Integer>mmap()
                     .persistent(testFile)
                     .allocateSize(10 * 1024 * 1024L)
                     .keyCodec(PrimitiveCodecs.INTEGER)
@@ -429,7 +429,7 @@ public class MmapFunctionalTest {
             }
             map1.close();
 
-            RogueMap<Integer, Integer> map2 = RogueMap.<Integer, Integer>builder()
+            RogueMap<Integer, Integer> map2 = RogueMap.<Integer, Integer>mmap()
                     .persistent(testFile)
                     .allocateSize(10 * 1024 * 1024L)
                     .keyCodec(PrimitiveCodecs.INTEGER)
@@ -451,7 +451,7 @@ public class MmapFunctionalTest {
         String testFile = "target/test-mmap-object.db";
 
         try {
-            RogueMap<String, TestUser> map1 = RogueMap.<String, TestUser>builder()
+            RogueMap<String, TestUser> map1 = RogueMap.<String, TestUser>mmap()
                     .persistent(testFile)
                     .allocateSize(10 * 1024 * 1024L)
                     .keyCodec(new StringCodec())
@@ -464,7 +464,7 @@ public class MmapFunctionalTest {
             map1.put("user2", user2);
             map1.close();
 
-            RogueMap<String, TestUser> map2 = RogueMap.<String, TestUser>builder()
+            RogueMap<String, TestUser> map2 = RogueMap.<String, TestUser>mmap()
                     .persistent(testFile)
                     .allocateSize(10 * 1024 * 1024L)
                     .keyCodec(new StringCodec())
@@ -494,7 +494,7 @@ public class MmapFunctionalTest {
         String testFile = "target/test-mmap-basic-index.db";
 
         try {
-            RogueMap<String, String> map1 = RogueMap.<String, String>builder()
+            RogueMap<String, String> map1 = RogueMap.<String, String>mmap()
                     .persistent(testFile)
                     .allocateSize(10 * 1024 * 1024L)
                     .basicIndex()
@@ -507,7 +507,7 @@ public class MmapFunctionalTest {
             }
             map1.close();
 
-            RogueMap<String, String> map2 = RogueMap.<String, String>builder()
+            RogueMap<String, String> map2 = RogueMap.<String, String>mmap()
                     .persistent(testFile)
                     .allocateSize(10 * 1024 * 1024L)
                     .basicIndex()
@@ -530,7 +530,7 @@ public class MmapFunctionalTest {
         String testFile = "target/test-mmap-segmented-index.db";
 
         try {
-            RogueMap<String, String> map1 = RogueMap.<String, String>builder()
+            RogueMap<String, String> map1 = RogueMap.<String, String>mmap()
                     .persistent(testFile)
                     .allocateSize(10 * 1024 * 1024L)
                     .segmentedIndex(32)
@@ -543,7 +543,7 @@ public class MmapFunctionalTest {
             }
             map1.close();
 
-            RogueMap<String, String> map2 = RogueMap.<String, String>builder()
+            RogueMap<String, String> map2 = RogueMap.<String, String>mmap()
                     .persistent(testFile)
                     .allocateSize(10 * 1024 * 1024L)
                     .segmentedIndex(32)
@@ -567,7 +567,7 @@ public class MmapFunctionalTest {
     public void testLargeDataPersistence() {
         int count = 10000;
 
-        RogueMap<String, String> map1 = RogueMap.<String, String>builder()
+        RogueMap<String, String> map1 = RogueMap.<String, String>mmap()
                 .persistent(TEST_FILE)
                 .allocateSize(100 * 1024 * 1024L)
                 .keyCodec(new StringCodec())
@@ -579,7 +579,7 @@ public class MmapFunctionalTest {
         }
         map1.close();
 
-        RogueMap<String, String> map2 = RogueMap.<String, String>builder()
+        RogueMap<String, String> map2 = RogueMap.<String, String>mmap()
                 .persistent(TEST_FILE)
                 .allocateSize(100 * 1024 * 1024L)
                 .keyCodec(new StringCodec())
@@ -597,7 +597,7 @@ public class MmapFunctionalTest {
     public void testLargeValuePersistence() {
         String largeValue = createLargeString(10000);
 
-        RogueMap<String, String> map1 = RogueMap.<String, String>builder()
+        RogueMap<String, String> map1 = RogueMap.<String, String>mmap()
                 .persistent(TEST_FILE)
                 .allocateSize(50 * 1024 * 1024L)
                 .keyCodec(new StringCodec())
@@ -607,7 +607,7 @@ public class MmapFunctionalTest {
         map1.put("large_key", largeValue);
         map1.close();
 
-        RogueMap<String, String> map2 = RogueMap.<String, String>builder()
+        RogueMap<String, String> map2 = RogueMap.<String, String>mmap()
                 .persistent(TEST_FILE)
                 .allocateSize(50 * 1024 * 1024L)
                 .keyCodec(new StringCodec())
@@ -622,7 +622,7 @@ public class MmapFunctionalTest {
 
     @Test
     public void testContainsKeyAfterPersistence() {
-        RogueMap<String, String> map1 = RogueMap.<String, String>builder()
+        RogueMap<String, String> map1 = RogueMap.<String, String>mmap()
                 .persistent(TEST_FILE)
                 .allocateSize(10 * 1024 * 1024L)
                 .keyCodec(new StringCodec())
@@ -632,7 +632,7 @@ public class MmapFunctionalTest {
         map1.put("exists", "yes");
         map1.close();
 
-        RogueMap<String, String> map2 = RogueMap.<String, String>builder()
+        RogueMap<String, String> map2 = RogueMap.<String, String>mmap()
                 .persistent(TEST_FILE)
                 .allocateSize(10 * 1024 * 1024L)
                 .keyCodec(new StringCodec())
@@ -646,7 +646,7 @@ public class MmapFunctionalTest {
 
     @Test
     public void testSpecialCharactersPersistence() {
-        RogueMap<String, String> map1 = RogueMap.<String, String>builder()
+        RogueMap<String, String> map1 = RogueMap.<String, String>mmap()
                 .persistent(TEST_FILE)
                 .allocateSize(10 * 1024 * 1024L)
                 .keyCodec(new StringCodec())
@@ -658,7 +658,7 @@ public class MmapFunctionalTest {
         map1.put("key\n\t", "special_chars");
         map1.close();
 
-        RogueMap<String, String> map2 = RogueMap.<String, String>builder()
+        RogueMap<String, String> map2 = RogueMap.<String, String>mmap()
                 .persistent(TEST_FILE)
                 .allocateSize(10 * 1024 * 1024L)
                 .keyCodec(new StringCodec())
@@ -676,8 +676,7 @@ public class MmapFunctionalTest {
     @Test
     public void testRequireFilePath() {
         assertThrows(IllegalStateException.class, () -> {
-            RogueMap.<String, String>builder()
-                    .mmap()
+            RogueMap.<String, String>mmap()
                     .keyCodec(new StringCodec())
                     .valueCodec(new StringCodec())
                     .build();
@@ -687,7 +686,7 @@ public class MmapFunctionalTest {
     @Test
     public void testInvalidAllocateSize() {
         assertThrows(IllegalArgumentException.class, () -> {
-            RogueMap.<String, String>builder()
+            RogueMap.<String, String>mmap()
                     .persistent(TEST_FILE)
                     .allocateSize(0)
                     .keyCodec(new StringCodec())
@@ -698,7 +697,7 @@ public class MmapFunctionalTest {
 
     @Test
     public void testFileCreation() {
-        RogueMap<String, String> map = RogueMap.<String, String>builder()
+        RogueMap<String, String> map = RogueMap.<String, String>mmap()
                 .persistent(TEST_FILE)
                 .allocateSize(10 * 1024 * 1024L)
                 .keyCodec(new StringCodec())

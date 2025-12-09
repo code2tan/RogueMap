@@ -32,11 +32,10 @@ public class OffHeapPerformanceTest {
         System.out.println("\n========== 原始索引插入性能测试 (Long 键) ==========");
         System.out.println("数据量: " + count);
 
-        RogueMap<Long, Long> map = RogueMap.<Long, Long>builder()
+        RogueMap<Long, Long> map = RogueMap.<Long, Long>offHeap()
                 .keyCodec(PrimitiveCodecs.LONG)
                 .valueCodec(PrimitiveCodecs.LONG)
                 .maxMemory(1024L * 1024 * 1024)
-                .offHeap()
                 .primitiveIndex()
                 .initialCapacity(count)
                 .build();
@@ -66,11 +65,10 @@ public class OffHeapPerformanceTest {
         System.out.println("\n========== 分段索引插入性能测试 (String 键) ==========");
         System.out.println("数据量: " + count);
 
-        RogueMap<String, String> map = RogueMap.<String, String>builder()
+        RogueMap<String, String> map = RogueMap.<String, String>offHeap()
                 .keyCodec(new StringCodec())
                 .valueCodec(new StringCodec())
                 .maxMemory(1024L * 1024 * 1024)
-                .offHeap()
                 .segmentedIndex(64)
                 .initialCapacity(count / 64)
                 .build();
@@ -100,11 +98,10 @@ public class OffHeapPerformanceTest {
         System.out.println("\n========== 读取性能测试 ==========");
         System.out.println("数据量: " + count);
 
-        RogueMap<Long, Long> map = RogueMap.<Long, Long>builder()
+        RogueMap<Long, Long> map = RogueMap.<Long, Long>offHeap()
                 .keyCodec(PrimitiveCodecs.LONG)
                 .valueCodec(PrimitiveCodecs.LONG)
                 .maxMemory(1024L * 1024 * 1024)
-                .offHeap()
                 .primitiveIndex()
                 .initialCapacity(count)
                 .build();
@@ -162,11 +159,10 @@ public class OffHeapPerformanceTest {
         System.out.println("\n========== 更新性能测试 ==========");
         System.out.println("数据量: " + count);
 
-        RogueMap<Long, Long> map = RogueMap.<Long, Long>builder()
+        RogueMap<Long, Long> map = RogueMap.<Long, Long>offHeap()
                 .keyCodec(PrimitiveCodecs.LONG)
                 .valueCodec(PrimitiveCodecs.LONG)
                 .maxMemory(1024L * 1024 * 1024)
-                .offHeap()
                 .primitiveIndex()
                 .initialCapacity(count)
                 .build();
@@ -211,11 +207,10 @@ public class OffHeapPerformanceTest {
         System.out.println("\n========== 删除性能测试 ==========");
         System.out.println("数据量: " + count);
 
-        RogueMap<Long, Long> map = RogueMap.<Long, Long>builder()
+        RogueMap<Long, Long> map = RogueMap.<Long, Long>offHeap()
                 .keyCodec(PrimitiveCodecs.LONG)
                 .valueCodec(PrimitiveCodecs.LONG)
                 .maxMemory(1024L * 1024 * 1024)
-                .offHeap()
                 .primitiveIndex()
                 .initialCapacity(count)
                 .build();
@@ -251,11 +246,10 @@ public class OffHeapPerformanceTest {
         System.out.println("\n========== 混合操作性能测试 ==========");
         System.out.println("操作总数: " + count * 3 + " (插入+读取+删除各 " + count + " 次)");
 
-        RogueMap<Long, Long> map = RogueMap.<Long, Long>builder()
+        RogueMap<Long, Long> map = RogueMap.<Long, Long>offHeap()
                 .keyCodec(PrimitiveCodecs.LONG)
                 .valueCodec(PrimitiveCodecs.LONG)
                 .maxMemory(1024L * 1024 * 1024)
-                .offHeap()
                 .primitiveIndex()
                 .initialCapacity(count)
                 .build();
@@ -300,11 +294,10 @@ public class OffHeapPerformanceTest {
         System.out.println("每线程数据量: " + itemsPerThread);
         System.out.println("总数据量: " + (threadCount * itemsPerThread));
 
-        RogueMap<String, String> map = RogueMap.<String, String>builder()
+        RogueMap<String, String> map = RogueMap.<String, String>offHeap()
                 .keyCodec(new StringCodec())
                 .valueCodec(new StringCodec())
                 .maxMemory(1024L * 1024 * 1024)
-                .offHeap()
                 .segmentedIndex(64)
                 .initialCapacity(threadCount * itemsPerThread / 64)
                 .build();
@@ -352,11 +345,10 @@ public class OffHeapPerformanceTest {
         System.out.println("初始数据量: " + count);
         System.out.println("线程数: " + threadCount + " (5读 + 5写)");
 
-        RogueMap<String, String> map = RogueMap.<String, String>builder()
+        RogueMap<String, String> map = RogueMap.<String, String>offHeap()
                 .keyCodec(new StringCodec())
                 .valueCodec(new StringCodec())
                 .maxMemory(1024L * 1024 * 1024)
-                .offHeap()
                 .segmentedIndex(64)
                 .build();
 
@@ -414,11 +406,10 @@ public class OffHeapPerformanceTest {
         System.out.println("\n========== 大对象存储性能测试 ==========");
         System.out.println("数据量: " + count);
 
-        RogueMap<Long, TestUserData> map = RogueMap.<Long, TestUserData>builder()
+        RogueMap<Long, TestUserData> map = RogueMap.<Long, TestUserData>offHeap()
                 .keyCodec(PrimitiveCodecs.LONG)
                 .valueCodec(KryoObjectCodec.create(TestUserData.class))
                 .maxMemory(1024L * 1024 * 1024)
-                .offHeap()
                 .primitiveIndex()
                 .initialCapacity(count)
                 .build();
@@ -471,11 +462,10 @@ public class OffHeapPerformanceTest {
 
         long beforeHeap = runtime.totalMemory() - runtime.freeMemory();
 
-        RogueMap<Long, Long> map = RogueMap.<Long, Long>builder()
+        RogueMap<Long, Long> map = RogueMap.<Long, Long>offHeap()
                 .keyCodec(PrimitiveCodecs.LONG)
                 .valueCodec(PrimitiveCodecs.LONG)
                 .maxMemory(1024L * 1024 * 1024)
-                .offHeap()
                 .primitiveIndex()
                 .initialCapacity(count)
                 .build();

@@ -239,51 +239,45 @@ public class RogueMap<K, V> implements AutoCloseable {
     }
 
     /**
-     * 为 RogueMap 创建一个新的构建器
+     * 创建堆外内存模式的构建器
      *
      * @param <K> 键类型
      * @param <V> 值类型
-     * @return 新的构建器
+     * @return OffHeap 构建器
      */
-    public static <K, V> Builder<K, V> builder() {
-        return new Builder<>();
+    public static <K, V> OffHeapBuilder<K, V> offHeap() {
+        return new OffHeapBuilder<>();
     }
 
     /**
-     * RogueMap 的构建器
+     * 创建内存映射文件模式的构建器
      *
      * @param <K> 键类型
      * @param <V> 值类型
+     * @return MMAP 构建器
      */
-    public static class Builder<K, V> {
-        private long maxMemory = 1024L * 1024 * 1024; // 默认 1GB
-        private Codec<K> keyCodec;
-        private Codec<V> valueCodec;
-        private boolean useSegmentedIndex = true;
-        private boolean usePrimitiveIndex = false;
-        private int segmentCount = 64;
-        private int initialCapacity = 16;
+    public static <K, V> MmapBuilder<K, V> mmap() {
+        return new MmapBuilder<>();
+    }
 
-        // MMAP 相关配置
-        private boolean useMmap = false;
-        private String persistentFilePath = null;
-        private long allocateSize = 10L * 1024 * 1024 * 1024; // 默认 10GB
+    /**
+     * RogueMap 的抽象构建器基类
+     * 包含 MMAP 和 OffHeap 模式的共同配置
+     *
+     * @param <K> 键类型
+     * @param <V> 值类型
+     * @param <B> 具体的构建器类型（用于链式调用）
+     */
+    @SuppressWarnings("unchecked")
+    public abstract static class BaseBuilder<K, V, B extends BaseBuilder<K, V, B>> {
+        protected Codec<K> keyCodec;
+        protected Codec<V> valueCodec;
+        protected boolean useSegmentedIndex = true;
+        protected boolean usePrimitiveIndex = false;
+        protected int segmentCount = 64;
+        protected int initialCapacity = 16;
 
-        private Builder() {
-        }
-
-        /**
-         * 设置最大内存大小
-         *
-         * @param maxMemory 最大内存（字节）
-         * @return 此构建器
-         */
-        public Builder<K, V> maxMemory(long maxMemory) {
-            if (maxMemory <= 0) {
-                throw new IllegalArgumentException("maxMemory 必须为正数");
-            }
-            this.maxMemory = maxMemory;
-            return this;
+        protected BaseBuilder() {
         }
 
         /**
@@ -292,9 +286,9 @@ public class RogueMap<K, V> implements AutoCloseable {
          * @param keyCodec 键编解码器
          * @return 此构建器
          */
-        public Builder<K, V> keyCodec(Codec<K> keyCodec) {
+        public B keyCodec(Codec<K> keyCodec) {
             this.keyCodec = keyCodec;
-            return this;
+            return (B) this;
         }
 
         /**
@@ -303,23 +297,23 @@ public class RogueMap<K, V> implements AutoCloseable {
          * @param valueCodec 值编解码器
          * @return 此构建器
          */
-        public Builder<K, V> valueCodec(Codec<V> valueCodec) {
+        public B valueCodec(Codec<V> valueCodec) {
             this.valueCodec = valueCodec;
-            return this;
+            return (B) this;
         }
 
         /**
-         * 设置初始容量（用于原始类型索引）
+         * 设置初始容量（用于索引）
          *
          * @param initialCapacity 初始容量
          * @return 此构建器
          */
-        public Builder<K, V> initialCapacity(int initialCapacity) {
+        public B initialCapacity(int initialCapacity) {
             if (initialCapacity <= 0) {
                 throw new IllegalArgumentException("initialCapacity 必须为正数");
             }
             this.initialCapacity = initialCapacity;
-            return this;
+            return (B) this;
         }
 
         /**
@@ -327,10 +321,10 @@ public class RogueMap<K, V> implements AutoCloseable {
          *
          * @return 此构建器
          */
-        public Builder<K, V> basicIndex() {
+        public B basicIndex() {
             this.useSegmentedIndex = false;
             this.usePrimitiveIndex = false;
-            return this;
+            return (B) this;
         }
 
         /**
@@ -339,11 +333,11 @@ public class RogueMap<K, V> implements AutoCloseable {
          * @param segmentCount 段数（必须是 2 的幂次方）
          * @return 此构建器
          */
-        public Builder<K, V> segmentedIndex(int segmentCount) {
+        public B segmentedIndex(int segmentCount) {
             this.useSegmentedIndex = true;
             this.usePrimitiveIndex = false;
             this.segmentCount = segmentCount;
-            return this;
+            return (B) this;
         }
 
         /**
@@ -352,59 +346,10 @@ public class RogueMap<K, V> implements AutoCloseable {
          *
          * @return 此构建器
          */
-        public Builder<K, V> primitiveIndex() {
+        public B primitiveIndex() {
             this.usePrimitiveIndex = true;
             this.useSegmentedIndex = false;
-            return this;
-        }
-
-        /**
-         * 启用堆外存储模式
-         *
-         * @return 此构建器
-         */
-        public Builder<K, V> offHeap() {
-            this.useMmap = false;
-            return this;
-        }
-
-        /**
-         * 启用内存映射文件模式
-         *
-         * @return 此构建器
-         */
-        public Builder<K, V> mmap() {
-            this.useMmap = true;
-            return this;
-        }
-
-        /**
-         * 设置持久化文件路径（自动启用 MMAP 模式）
-         *
-         * @param filePath 文件路径
-         * @return 此构建器
-         */
-        public Builder<K, V> persistent(String filePath) {
-            if (filePath == null || filePath.isEmpty()) {
-                throw new IllegalArgumentException("文件路径不能为空");
-            }
-            this.persistentFilePath = filePath;
-            this.useMmap = true;
-            return this;
-        }
-
-        /**
-         * 设置预分配文件大小（仅用于 MMAP 模式）
-         *
-         * @param size 预分配大小（字节）
-         * @return 此构建器
-         */
-        public Builder<K, V> allocateSize(long size) {
-            if (size <= 0) {
-                throw new IllegalArgumentException("分配大小必须为正数");
-            }
-            this.allocateSize = size;
-            return this;
+            return (B) this;
         }
 
         /**
@@ -415,7 +360,7 @@ public class RogueMap<K, V> implements AutoCloseable {
          * @return 索引实例
          */
         @SuppressWarnings("unchecked")
-        private Index<K> createIndexFromType(int indexType, Codec<K> keyCodec) {
+        protected Index<K> createIndexFromType(int indexType, Codec<K> keyCodec) {
             if (indexType == 0) {
                 return new HashIndex<>(keyCodec, initialCapacity);
             } else if (indexType == 1) {
@@ -429,13 +374,13 @@ public class RogueMap<K, V> implements AutoCloseable {
         }
 
         /**
-         * 创建新索引（用于新文件）
+         * 创建新索引
          *
          * @param keyCodec 键编解码器
          * @return 索引实例
          */
         @SuppressWarnings("unchecked")
-        private Index<K> createNewIndex(Codec<K> keyCodec) {
+        protected Index<K> createNewIndex(Codec<K> keyCodec) {
             if (usePrimitiveIndex) {
                 // 使用原始类型索引（仅支持Long/Integer键）
                 if (keyCodec == PrimitiveCodecs.LONG) {
@@ -458,7 +403,120 @@ public class RogueMap<K, V> implements AutoCloseable {
          *
          * @return 新的 RogueMap
          */
-        @SuppressWarnings("unchecked")
+        public abstract RogueMap<K, V> build();
+    }
+
+    /**
+     * 内存映射文件模式的构建器
+     *
+     * @param <K> 键类型
+     * @param <V> 值类型
+     */
+    public static class MmapBuilder<K, V> extends BaseBuilder<K, V, MmapBuilder<K, V>> {
+        private String persistentFilePath;
+        private long allocateSize = 10L * 1024 * 1024 * 1024; // 默认 10GB
+
+        private MmapBuilder() {
+        }
+
+        /**
+         * 设置持久化文件路径
+         *
+         * @param filePath 文件路径
+         * @return 此构建器
+         */
+        public MmapBuilder<K, V> persistent(String filePath) {
+            if (filePath == null || filePath.isEmpty()) {
+                throw new IllegalArgumentException("文件路径不能为空");
+            }
+            this.persistentFilePath = filePath;
+            return this;
+        }
+
+        /**
+         * 设置预分配文件大小
+         *
+         * @param size 预分配大小（字节）
+         * @return 此构建器
+         */
+        public MmapBuilder<K, V> allocateSize(long size) {
+            if (size <= 0) {
+                throw new IllegalArgumentException("分配大小必须为正数");
+            }
+            this.allocateSize = size;
+            return this;
+        }
+
+        @Override
+        public RogueMap<K, V> build() {
+            if (keyCodec == null) {
+                throw new IllegalStateException("必须设置键编解码器");
+            }
+            if (valueCodec == null) {
+                throw new IllegalStateException("必须设置值编解码器");
+            }
+            if (persistentFilePath == null || persistentFilePath.isEmpty()) {
+                throw new IllegalStateException("MMAP 模式必须设置文件路径，请使用 persistent(filePath)");
+            }
+
+            MmapAllocator mmapAllocator = new MmapAllocator(persistentFilePath, allocateSize);
+            Allocator allocator = mmapAllocator;
+            StorageEngine storage = new MmapStorage(mmapAllocator);
+
+            Index<K> index;
+
+            // 检查是否是已存在的文件
+            if (mmapAllocator.isExistingFile()) {
+                // 恢复模式
+                com.yomahub.roguemap.storage.MmapFileHeader header = mmapAllocator.readHeader();
+
+                // 恢复 allocator 的 offset
+                mmapAllocator.restoreOffset(header.getCurrentOffset());
+
+                // 创建索引并恢复数据
+                index = createIndexFromType(header.getIndexType(), keyCodec);
+
+                if (header.getIndexSize() > 0) {
+                    long baseAddress = mmapAllocator.getBaseAddress();
+                    long indexAddress = baseAddress + header.getIndexOffset();
+                    index.deserializeWithOffsets(indexAddress, (int) header.getIndexSize(), baseAddress);
+                }
+            } else {
+                // 新文件模式
+                index = createNewIndex(keyCodec);
+            }
+
+            return new RogueMap<>(index, storage, keyCodec, valueCodec, allocator);
+        }
+    }
+
+    /**
+     * 堆外内存模式的构建器
+     *
+     * @param <K> 键类型
+     * @param <V> 值类型
+     */
+    public static class OffHeapBuilder<K, V> extends BaseBuilder<K, V, OffHeapBuilder<K, V>> {
+        private long maxMemory = 1024L * 1024 * 1024; // 默认 1GB
+
+        private OffHeapBuilder() {
+        }
+
+        /**
+         * 设置最大内存大小
+         *
+         * @param maxMemory 最大内存（字节）
+         * @return 此构建器
+         */
+        public OffHeapBuilder<K, V> maxMemory(long maxMemory) {
+            if (maxMemory <= 0) {
+                throw new IllegalArgumentException("maxMemory 必须为正数");
+            }
+            this.maxMemory = maxMemory;
+            return this;
+        }
+
+        @Override
         public RogueMap<K, V> build() {
             if (keyCodec == null) {
                 throw new IllegalStateException("必须设置键编解码器");
@@ -467,47 +525,10 @@ public class RogueMap<K, V> implements AutoCloseable {
                 throw new IllegalStateException("必须设置值编解码器");
             }
 
-            // 创建分配器和存储引擎
-            Allocator allocator;
-            StorageEngine storage;
-
-            Index<K> index;
-
-            if (useMmap) {
-                // MMAP 模式
-                if (persistentFilePath == null || persistentFilePath.isEmpty()) {
-                    throw new IllegalStateException("MMAP 模式必须设置文件路径，请使用 persistent(filePath)");
-                }
-                MmapAllocator mmapAllocator = new MmapAllocator(persistentFilePath, allocateSize);
-                allocator = mmapAllocator;
-                storage = new MmapStorage(mmapAllocator);
-
-                // 检查是否是已存在的文件
-                if (mmapAllocator.isExistingFile()) {
-                    // 恢复模式
-                    com.yomahub.roguemap.storage.MmapFileHeader header = mmapAllocator.readHeader();
-
-                    // 恢复 allocator 的 offset
-                    mmapAllocator.restoreOffset(header.getCurrentOffset());
-
-                    // 创建索引并恢复数据
-                    index = createIndexFromType(header.getIndexType(), keyCodec);
-
-                    if (header.getIndexSize() > 0) {
-                        long baseAddress = mmapAllocator.getBaseAddress();
-                        long indexAddress = baseAddress + header.getIndexOffset();
-                        index.deserializeWithOffsets(indexAddress, (int) header.getIndexSize(), baseAddress);
-                    }
-                } else {
-                    // 新文件模式
-                    index = createNewIndex(keyCodec);
-                }
-            } else {
-                // 堆外内存模式
-                allocator = new SlabAllocator(maxMemory);
-                storage = new OffHeapStorage(allocator);
-                index = createNewIndex(keyCodec);
-            }
+            // 堆外内存模式
+            Allocator allocator = new SlabAllocator(maxMemory);
+            StorageEngine storage = new OffHeapStorage(allocator);
+            Index<K> index = createNewIndex(keyCodec);
 
             return new RogueMap<>(index, storage, keyCodec, valueCodec, allocator);
         }

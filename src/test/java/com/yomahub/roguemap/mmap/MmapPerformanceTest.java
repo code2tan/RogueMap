@@ -46,7 +46,7 @@ public class MmapPerformanceTest {
         System.out.println("\n========== MMAP 首次写入性能测试 ==========");
         System.out.println("数据量: " + count);
 
-        RogueMap<Long, Long> map = RogueMap.<Long, Long>builder()
+        RogueMap<Long, Long> map = RogueMap.<Long, Long>mmap()
                 .persistent(TEST_FILE)
                 .allocateSize(1024L * 1024 * 1024)
                 .keyCodec(PrimitiveCodecs.LONG)
@@ -91,7 +91,7 @@ public class MmapPerformanceTest {
         System.out.println("数据量: " + count);
 
         // 第一阶段：写入数据
-        RogueMap<Long, Long> map1 = RogueMap.<Long, Long>builder()
+        RogueMap<Long, Long> map1 = RogueMap.<Long, Long>mmap()
                 .persistent(TEST_FILE)
                 .allocateSize(1024L * 1024 * 1024)
                 .keyCodec(PrimitiveCodecs.LONG)
@@ -109,7 +109,7 @@ public class MmapPerformanceTest {
         // 第二阶段：恢复并读取
         long startTime = System.currentTimeMillis();
 
-        RogueMap<Long, Long> map2 = RogueMap.<Long, Long>builder()
+        RogueMap<Long, Long> map2 = RogueMap.<Long, Long>mmap()
                 .persistent(TEST_FILE)
                 .allocateSize(1024L * 1024 * 1024)
                 .keyCodec(PrimitiveCodecs.LONG)
@@ -149,7 +149,7 @@ public class MmapPerformanceTest {
         System.out.println("数据量: " + count);
 
         // 准备数据
-        RogueMap<Long, Long> map1 = RogueMap.<Long, Long>builder()
+        RogueMap<Long, Long> map1 = RogueMap.<Long, Long>mmap()
                 .persistent(TEST_FILE)
                 .allocateSize(1024L * 1024 * 1024)
                 .keyCodec(PrimitiveCodecs.LONG)
@@ -163,7 +163,7 @@ public class MmapPerformanceTest {
         map1.close();
 
         // 重新打开并测试读取
-        RogueMap<Long, Long> map2 = RogueMap.<Long, Long>builder()
+        RogueMap<Long, Long> map2 = RogueMap.<Long, Long>mmap()
                 .persistent(TEST_FILE)
                 .allocateSize(1024L * 1024 * 1024)
                 .keyCodec(PrimitiveCodecs.LONG)
@@ -223,7 +223,7 @@ public class MmapPerformanceTest {
         System.out.println("更新数据量: " + updateCount);
 
         // 第一阶段：写入初始数据
-        RogueMap<Long, Long> map1 = RogueMap.<Long, Long>builder()
+        RogueMap<Long, Long> map1 = RogueMap.<Long, Long>mmap()
                 .persistent(TEST_FILE)
                 .allocateSize(1024L * 1024 * 1024)
                 .keyCodec(PrimitiveCodecs.LONG)
@@ -237,7 +237,7 @@ public class MmapPerformanceTest {
         map1.close();
 
         // 第二阶段：重新打开并更新
-        RogueMap<Long, Long> map2 = RogueMap.<Long, Long>builder()
+        RogueMap<Long, Long> map2 = RogueMap.<Long, Long>mmap()
                 .persistent(TEST_FILE)
                 .allocateSize(1024L * 1024 * 1024)
                 .keyCodec(PrimitiveCodecs.LONG)
@@ -289,7 +289,7 @@ public class MmapPerformanceTest {
         for (int session = 0; session < sessionsCount; session++) {
             long startTime = System.currentTimeMillis();
 
-            RogueMap<String, String> map = RogueMap.<String, String>builder()
+            RogueMap<String, String> map = RogueMap.<String, String>mmap()
                     .persistent(TEST_FILE)
                     .allocateSize(1024L * 1024 * 1024)
                     .keyCodec(new StringCodec())
@@ -315,7 +315,7 @@ public class MmapPerformanceTest {
         System.out.println("总吞吐量: " + (sessionsCount * itemsPerSession * 1000L / totalDuration) + " ops/sec");
 
         // 验证最终数据
-        RogueMap<String, String> finalMap = RogueMap.<String, String>builder()
+        RogueMap<String, String> finalMap = RogueMap.<String, String>mmap()
                 .persistent(TEST_FILE)
                 .allocateSize(1024L * 1024 * 1024)
                 .keyCodec(new StringCodec())
@@ -338,7 +338,7 @@ public class MmapPerformanceTest {
         System.out.println("数据量: " + count);
 
         // 写入阶段
-        RogueMap<Long, TestUserData> map1 = RogueMap.<Long, TestUserData>builder()
+        RogueMap<Long, TestUserData> map1 = RogueMap.<Long, TestUserData>mmap()
                 .persistent(TEST_FILE)
                 .allocateSize(1024L * 1024 * 1024)
                 .keyCodec(PrimitiveCodecs.LONG)
@@ -367,7 +367,7 @@ public class MmapPerformanceTest {
         // 读取阶段
         startTime = System.currentTimeMillis();
 
-        RogueMap<Long, TestUserData> map2 = RogueMap.<Long, TestUserData>builder()
+        RogueMap<Long, TestUserData> map2 = RogueMap.<Long, TestUserData>mmap()
                 .persistent(TEST_FILE)
                 .allocateSize(1024L * 1024 * 1024)
                 .keyCodec(PrimitiveCodecs.LONG)
@@ -408,7 +408,7 @@ public class MmapPerformanceTest {
         System.out.println("段数: 64");
 
         // 写入阶段
-        RogueMap<String, String> map1 = RogueMap.<String, String>builder()
+        RogueMap<String, String> map1 = RogueMap.<String, String>mmap()
                 .persistent(TEST_FILE)
                 .allocateSize(1024L * 1024 * 1024)
                 .keyCodec(new StringCodec())
@@ -436,7 +436,7 @@ public class MmapPerformanceTest {
         // 恢复阶段
         startTime = System.currentTimeMillis();
 
-        RogueMap<String, String> map2 = RogueMap.<String, String>builder()
+        RogueMap<String, String> map2 = RogueMap.<String, String>mmap()
                 .persistent(TEST_FILE)
                 .allocateSize(1024L * 1024 * 1024)
                 .keyCodec(new StringCodec())
@@ -474,7 +474,7 @@ public class MmapPerformanceTest {
         System.out.println("预分配文件大小: " + formatMemorySize(allocateSize));
 
         // 使用原始类型索引
-        RogueMap<Long, TestUserData> map1 = RogueMap.<Long, TestUserData>builder()
+        RogueMap<Long, TestUserData> map1 = RogueMap.<Long, TestUserData>mmap()
                 .persistent(TEST_FILE)
                 .allocateSize(allocateSize)
                 .keyCodec(PrimitiveCodecs.LONG)
@@ -529,7 +529,7 @@ public class MmapPerformanceTest {
         // 恢复阶段
         System.out.println("\n--- 恢复阶段测试 ---");
 
-        RogueMap<Long, TestUserData> map2 = RogueMap.<Long, TestUserData>builder()
+        RogueMap<Long, TestUserData> map2 = RogueMap.<Long, TestUserData>mmap()
                 .persistent(TEST_FILE)
                 .allocateSize(allocateSize)
                 .keyCodec(PrimitiveCodecs.LONG)
@@ -594,7 +594,7 @@ public class MmapPerformanceTest {
         System.out.println("预估数据大小: " + formatMemorySize(estimatedSize));
         System.out.println("预分配文件大小: " + formatMemorySize(allocateSize));
 
-        RogueMap<Long, TestUserData> map1 = RogueMap.<Long, TestUserData>builder()
+        RogueMap<Long, TestUserData> map1 = RogueMap.<Long, TestUserData>mmap()
                 .persistent(TEST_FILE)
                 .allocateSize(allocateSize)
                 .keyCodec(PrimitiveCodecs.LONG)
@@ -660,7 +660,7 @@ public class MmapPerformanceTest {
         // 恢复阶段 - 测试重新加载时的内存占用
         System.out.println("\n--- 恢复阶段测试 ---");
 
-        RogueMap<Long, TestUserData> map2 = RogueMap.<Long, TestUserData>builder()
+        RogueMap<Long, TestUserData> map2 = RogueMap.<Long, TestUserData>mmap()
                 .persistent(TEST_FILE)
                 .allocateSize(allocateSize)
                 .keyCodec(PrimitiveCodecs.LONG)
@@ -725,7 +725,7 @@ public class MmapPerformanceTest {
             try {
                 long startTime = System.currentTimeMillis();
 
-                RogueMap<Long, Long> map = RogueMap.<Long, Long>builder()
+                RogueMap<Long, Long> map = RogueMap.<Long, Long>mmap()
                         .persistent(testFile)
                         .allocateSize(fileSizes[i])
                         .keyCodec(PrimitiveCodecs.LONG)
@@ -759,7 +759,7 @@ public class MmapPerformanceTest {
         System.out.println("数据量: " + count);
 
         // 准备数据
-        RogueMap<Long, Long> map1 = RogueMap.<Long, Long>builder()
+        RogueMap<Long, Long> map1 = RogueMap.<Long, Long>mmap()
                 .persistent(TEST_FILE)
                 .allocateSize(1024L * 1024 * 1024)
                 .keyCodec(PrimitiveCodecs.LONG)
@@ -773,7 +773,7 @@ public class MmapPerformanceTest {
         map1.close();
 
         // 重新打开并删除
-        RogueMap<Long, Long> map2 = RogueMap.<Long, Long>builder()
+        RogueMap<Long, Long> map2 = RogueMap.<Long, Long>mmap()
                 .persistent(TEST_FILE)
                 .allocateSize(1024L * 1024 * 1024)
                 .keyCodec(PrimitiveCodecs.LONG)
@@ -799,7 +799,7 @@ public class MmapPerformanceTest {
         System.out.println("删除吞吐量: " + (count / 2 * 1000L / deleteDuration) + " ops/sec");
 
         // 验证删除
-        RogueMap<Long, Long> map3 = RogueMap.<Long, Long>builder()
+        RogueMap<Long, Long> map3 = RogueMap.<Long, Long>mmap()
                 .persistent(TEST_FILE)
                 .allocateSize(1024L * 1024 * 1024)
                 .keyCodec(PrimitiveCodecs.LONG)
