@@ -7,12 +7,39 @@
 
     <groupId>com.yomahub</groupId>
     <artifactId>roguemap</artifactId>
-    <version>0.1.0-SNAPSHOT</version>
+    <version>1.0.0-BETA</version>
     <packaging>jar</packaging>
 
     <name>RogueMap</name>
     <description>High-performance off-heap and persistent key-value storage for Java</description>
     <url>https://github.com/bryan31/RogueMap</url>
+
+    <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <name>bryan31</name>
+            <email>weenyc31@163.com</email>
+            <organization>yomahub</organization>
+        </developer>
+    </developers>
+
+    <issueManagement>
+        <system>Github Issue</system>
+        <url>https://github.com/bryan31/RogueMap.git</url>
+    </issueManagement>
+
+    <scm>
+        <connection>scm:git@github.com:bryan31/RogueMap.git</connection>
+        <developerConnection>scm:git@github.com:bryan31/RogueMap.git</developerConnection>
+        <url>https://github.com/bryan31/RogueMap.git</url>
+    </scm>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -122,25 +149,6 @@
         </plugins>
     </build>
 
-    <licenses>
-        <license>
-            <name>Apache License, Version 2.0</name>
-            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
-            <distribution>repo</distribution>
-        </license>
-    </licenses>
 
-    <developers>
-        <developer>
-            <name>bryan31</name>
-            <email>bryan31@yomahub.com</email>
-            <organization>YomaHub</organization>
-        </developer>
-    </developers>
 
-    <scm>
-        <connection>scm:git:git://github.com/bryan31/RogueMap.git</connection>
-        <developerConnection>scm:git:ssh://github.com:bryan31/RogueMap.git</developerConnection>
-        <url>https://github.com/bryan31/RogueMap</url>
-    </scm>
 </project>

@@ -14,7 +14,7 @@ RogueMap 是一个专为 Java 应用设计的高性能键值存储引擎，提�
 
 - **极致性能**: 写入速度比 MapDB 快 4.4 倍，读取速度快 15.9 倍
 - **低内存占用**: 堆外内存模式减少 87% 堆内存使用
-- **灵活存储**: 支持堆外内存（OffHeap）和内存映射文件（Mmap）两种模式
+- **灵活存储**: 支持堆外内存（OffHeap）和 映射映射文件（Mmap Persist）以及 临时文件（Mmap Temp File）三种模式
 - **易于使用**: 简洁的 Builder API，类型安全，自动资源管理
 
 ### 适用场景
@@ -27,16 +27,15 @@ RogueMap 是一个专为 Java 应用设计的高性能键值存储引擎，提�
 
 ## ✨ 特性
 
-- ✅ **多种存储模式** - 支持 OffHeap（堆外内存）和 Mmap（内存映射文件）两种存储模式
+- ✅ **多种存储模式** - 支持 堆外内存、内存映射文件、内存映射临时文件 三种模式
 - ✅ **持久化支持** - Mmap 模式支持数据持久化到磁盘，支持自动恢复
+- ✅ **临时文件模式** - 支持自动清理的临时文件存储
 - ✅ **零拷贝序列化** - 原始类型直接内存布局，无序列化开销
 - ✅ **高并发支持** - 分段锁设计（64 个段），StampedLock 乐观锁优化
 - ✅ **智能内存分配** - Slab Allocator 减少内存碎片
 - ✅ **多种索引结构** - 支持 HashIndex、SegmentedHashIndex、LongPrimitiveIndex、IntPrimitiveIndex
 - ✅ **类型安全** - 泛型支持，编译时类型检查
 - ✅ **零依赖** - 核心库无第三方依赖
-- ✅ **临时文件模式** - 支持自动清理的临时文件存储
-- ✅ **Java 8 兼容** - 兼容 Java 8+
 
 ## 🚀 快速开始
 
@@ -46,7 +45,7 @@ RogueMap 是一个专为 Java 应用设计的高性能键值存储引擎，提�
 <dependency>
     <groupId>com.yomahub</groupId>
     <artifactId>roguemap</artifactId>
-    <version>0.1.0-SNAPSHOT</version>
+    <version>1.0.0-Beta</version>
 </dependency>
 ```
 
