@@ -1,8 +1,15 @@
-# RogueMap
+<div align="center">
+  <img src="static/img/logo.svg" alt="RogueMap Logo" width="120" height="120">
+  <h1>RogueMap</h1>
+</div>
+
+<div align="center">
 
 [![License](https://img.shields.io/badge/license-Apache%202-blue.svg)](LICENSE)
 [![Java](https://img.shields.io/badge/Java-8%2B-orange.svg)](https://www.oracle.com/java/)
 [![Version](https://img.shields.io/badge/version-0.1.0--SNAPSHOT-green.svg)](https://github.com/bryan31/RogueMap)
+
+</div>
 
 **RogueMap** 是一个高性能的嵌入式键值存储引擎，突破 HashMap 的内存墙，提供堆外内存和持久化存储能力。
 
