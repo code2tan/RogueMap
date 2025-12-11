@@ -7,7 +7,7 @@
 
 [![License](https://img.shields.io/badge/license-Apache%202-blue.svg)](LICENSE)
 [![Java](https://img.shields.io/badge/Java-8%2B-orange.svg)](https://www.oracle.com/java/)
-[![Version](https://img.shields.io/badge/version-0.1.0--SNAPSHOT-green.svg)](https://github.com/bryan31/RogueMap)
+[![Version](https://img.shields.io/badge/version-1.0.0--BETA1-green.svg)](https://github.com/bryan31/RogueMap)
 
 </div>
 
