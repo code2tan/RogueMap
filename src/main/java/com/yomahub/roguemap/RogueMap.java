@@ -2,6 +2,8 @@ package com.yomahub.roguemap;
 
 import com.yomahub.roguemap.index.HashIndex;
 import com.yomahub.roguemap.index.Index;
+import com.yomahub.roguemap.index.IndexRemoveResult;
+import com.yomahub.roguemap.index.IndexUpdateResult;
 import com.yomahub.roguemap.index.IntPrimitiveIndex;
 import com.yomahub.roguemap.index.LongPrimitiveIndex;
 import com.yomahub.roguemap.index.SegmentedHashIndex;
@@ -57,32 +59,33 @@ public class RogueMap<K, V> implements AutoCloseable {
         }
 
         // 为值分配内存
-        long address = allocator.allocate(valueSize);
-        if (address == 0) {
+        long newAddress = allocator.allocate(valueSize);
+        if (newAddress == 0) {
             throw new OutOfMemoryError("分配 " + valueSize + " 字节失败");
         }
 
         try {
-            // 将值编码到内存
-            int actualSize = valueCodec.encode(address, value);
+            // 将值编码到新内存
+            int actualSize = valueCodec.encode(newAddress, value);
 
-            // 如果存在旧值则获取
+            // 原子性地更新索引并获取旧值信息
+            // 这确保了在多线程环境下，获取旧地址和更新索引是原子操作
+            IndexUpdateResult result = index.putAndGetOld(key, newAddress, actualSize);
+
+            // 处理旧值
             V oldValue = null;
-            long oldAddress = index.get(key);
-            if (oldAddress != 0) {
-                int oldSize = index.getSize(key);
-                oldValue = valueCodec.decode(oldAddress);
-                // 释放旧内存
-                allocator.free(oldAddress, oldSize);
-            }
+            if (result.wasPresent) {
+                // 先解码旧值（此时旧地址还未被释放，是安全的）
+                oldValue = valueCodec.decode(result.oldAddress);
 
-            // 更新索引
-            index.put(key, address, actualSize);
+                // 解码完成后才释放旧内存
+                allocator.free(result.oldAddress, result.oldSize);
+            }
 
             return oldValue;
         } catch (Exception e) {
-            // 出错时释放已分配的内存
-            allocator.free(address, valueSize);
+            // 异常处理：释放新分配的内存
+            allocator.free(newAddress, valueSize);
             throw e;
         }
     }
@@ -117,16 +120,17 @@ public class RogueMap<K, V> implements AutoCloseable {
             return null;
         }
 
-        long address = index.remove(key);
-        if (address == 0) {
+        // 原子性地删除并获取值信息
+        IndexRemoveResult result = index.removeAndGet(key);
+        if (!result.wasPresent) {
             return null;
         }
 
-        int size = index.getSize(key);
-        V oldValue = valueCodec.decode(address);
+        // 先解码值
+        V oldValue = valueCodec.decode(result.address);
 
         // 释放内存
-        allocator.free(address, size);
+        allocator.free(result.address, result.size);
 
         return oldValue;
     }
@@ -163,7 +167,12 @@ public class RogueMap<K, V> implements AutoCloseable {
      * 移除所有条目
      */
     public void clear() {
-        // TODO: 清除前释放索引中的所有内存地址
+        // 遍历所有条目并释放内存
+        index.forEach((key, address, size) -> {
+            allocator.free(address, size);
+        });
+
+        // 清空索引
         index.clear();
     }
 

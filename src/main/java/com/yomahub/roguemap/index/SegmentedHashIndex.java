@@ -111,6 +111,52 @@ public class SegmentedHashIndex<K> implements Index<K> {
     }
 
     @Override
+    public IndexUpdateResult putAndGetOld(K key, long newAddress, int newSize) {
+        if (key == null) {
+            throw new IllegalArgumentException("键不能为 null");
+        }
+        if (newAddress == 0) {
+            throw new IllegalArgumentException("无效的地址: 0");
+        }
+
+        Segment<K> segment = getSegment(key);
+        IndexUpdateResult result = segment.putAndGetOld(key, newAddress, newSize);
+
+        if (!result.wasPresent) {
+            size.incrementAndGet();
+        }
+
+        return result;
+    }
+
+    @Override
+    public IndexRemoveResult removeAndGet(K key) {
+        if (key == null) {
+            return IndexRemoveResult.notPresent();
+        }
+
+        Segment<K> segment = getSegment(key);
+        IndexRemoveResult result = segment.removeAndGet(key);
+
+        if (result.wasPresent) {
+            size.decrementAndGet();
+        }
+
+        return result;
+    }
+
+    @Override
+    public void forEach(IndexEntryConsumer consumer) {
+        if (consumer == null) {
+            return;
+        }
+
+        for (Segment<K> segment : segments) {
+            segment.forEach(consumer);
+        }
+    }
+
+    @Override
     public boolean containsKey(K key) {
         if (key == null) {
             return false;
@@ -470,6 +516,45 @@ public class SegmentedHashIndex<K> implements Index<K> {
                 return entry != null ? entry.address : 0;
             } finally {
                 lock.unlockWrite(stamp);
+            }
+        }
+
+        IndexUpdateResult putAndGetOld(K key, long newAddress, int newSize) {
+            long stamp = lock.writeLock();
+            try {
+                Entry oldEntry = map.put(key, new Entry(newAddress, newSize));
+                if (oldEntry != null) {
+                    return IndexUpdateResult.withOldValue(oldEntry.address, oldEntry.size);
+                } else {
+                    return IndexUpdateResult.noOldValue();
+                }
+            } finally {
+                lock.unlockWrite(stamp);
+            }
+        }
+
+        IndexRemoveResult removeAndGet(K key) {
+            long stamp = lock.writeLock();
+            try {
+                Entry entry = map.remove(key);
+                if (entry != null) {
+                    return IndexRemoveResult.removed(entry.address, entry.size);
+                } else {
+                    return IndexRemoveResult.notPresent();
+                }
+            } finally {
+                lock.unlockWrite(stamp);
+            }
+        }
+
+        void forEach(IndexEntryConsumer consumer) {
+            long stamp = lock.readLock();
+            try {
+                for (Map.Entry<K, Entry> entry : map.entrySet()) {
+                    consumer.accept(entry.getKey(), entry.getValue().address, entry.getValue().size);
+                }
+            } finally {
+                lock.unlockRead(stamp);
             }
         }
 
