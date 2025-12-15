@@ -1,5 +1,6 @@
 package com.yomahub.roguemap.index;
 
+import com.yomahub.roguemap.func.EntryConsumer;
 import com.yomahub.roguemap.memory.UnsafeOps;
 import com.yomahub.roguemap.serialization.Codec;
 
@@ -102,8 +103,20 @@ public class HashIndex<K> implements Index<K> {
 
     @Override
     public void clear() {
-        map.clear();
-        size.set(0);
+        clear(null);
+    }
+
+    @Override
+    public void clear(EntryConsumer action) {
+        // 使用迭代器逐个移除，确保原子性和回调执行
+        map.forEach((k, v) -> {
+            if (map.remove(k, v)) { // 原子性移除
+                size.decrementAndGet();
+                if (action != null) {
+                    action.accept(v.address, v.size);
+                }
+            }
+        });
     }
 
     @Override
@@ -294,6 +307,16 @@ public class HashIndex<K> implements Index<K> {
         }
 
         this.size.set(entryCount);
+    }
+
+    @Override
+    public void forEach(EntryConsumer action) {
+        if (action == null) {
+            throw new IllegalArgumentException("Action 不能为 null");
+        }
+        for (Entry entry : map.values()) {
+            action.accept(entry.address, entry.size);
+        }
     }
 
     /**

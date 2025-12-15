@@ -163,8 +163,12 @@ public class RogueMap<K, V> implements AutoCloseable {
      * 移除所有条目
      */
     public void clear() {
-        // TODO: 清除前释放索引中的所有内存地址
-        index.clear();
+        // 使用新添加的 clear(Consumer) 方法，在清除索引的同时释放堆外内存
+        index.clear((address, size) -> {
+            if (address != 0) {
+                allocator.free(address, size);
+            }
+        });
     }
 
     /**

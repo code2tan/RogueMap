@@ -1,5 +1,6 @@
 package com.yomahub.roguemap.index;
 
+import com.yomahub.roguemap.func.EntryConsumer;
 import com.yomahub.roguemap.memory.UnsafeOps;
 import com.yomahub.roguemap.serialization.Codec;
 
@@ -127,10 +128,26 @@ public class SegmentedHashIndex<K> implements Index<K> {
 
     @Override
     public void clear() {
+        clear(null);
+    }
+
+    @Override
+    public void clear(EntryConsumer action) {
         for (Segment<K> segment : segments) {
-            segment.clear();
+            long stamp = segment.lock.writeLock();
+            try {
+                if (action != null) {
+                    for (Entry entry : segment.map.values()) {
+                        action.accept(entry.address, entry.size);
+                    }
+                }
+                int count = segment.map.size();
+                segment.map.clear();
+                size.addAndGet(-count);
+            } finally {
+                segment.lock.unlockWrite(stamp);
+            }
         }
-        size.set(0);
     }
 
     @Override
@@ -625,6 +642,23 @@ public class SegmentedHashIndex<K> implements Index<K> {
             actualTotalSize += segment.map.size();
         }
         this.size.set(actualTotalSize);
+    }
+
+    @Override
+    public void forEach(EntryConsumer action) {
+        if (action == null) {
+            throw new IllegalArgumentException("Action 不能为 null");
+        }
+        for (Segment<K> segment : segments) {
+            long stamp = segment.lock.readLock();
+            try {
+                for (Entry entry : segment.map.values()) {
+                    action.accept(entry.address, entry.size);
+                }
+            } finally {
+                segment.lock.unlockRead(stamp);
+            }
+        }
     }
 
     /**
