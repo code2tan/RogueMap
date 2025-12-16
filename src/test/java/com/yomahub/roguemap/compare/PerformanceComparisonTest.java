@@ -17,7 +17,7 @@ import java.util.Map;
 import java.util.Random;
 
 /**
- * RogueMap 综合性能与内存对比测试
+ * RogueMap 综合性能与内存对比测试 (Object类型)
  *
  * 测试内容：
  * 1. 堆内存占用对比
