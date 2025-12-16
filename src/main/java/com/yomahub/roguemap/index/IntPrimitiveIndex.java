@@ -151,6 +151,90 @@ public class IntPrimitiveIndex implements Index<Integer> {
     }
 
     @Override
+    public IndexUpdateResult putAndGetOld(Integer key, long newAddress, int newSize) {
+        if (key == null || key == EMPTY_KEY || key == DELETED_KEY) {
+            throw new IllegalArgumentException("无效的键: " + key);
+        }
+        if (newAddress == 0) {
+            throw new IllegalArgumentException("无效的地址: 0");
+        }
+
+        long stamp = lock.writeLock();
+        try {
+            if (size >= threshold) {
+                resize();
+            }
+
+            int index = findSlot(key);
+            long oldAddress = addresses[index];
+            int oldSize = sizes[index];
+            boolean wasPresent = (keys[index] != EMPTY_KEY && keys[index] != DELETED_KEY);
+
+            if (!wasPresent) {
+                size++;
+            }
+
+            keys[index] = key;
+            addresses[index] = newAddress;
+            sizes[index] = newSize;
+
+            if (wasPresent) {
+                return IndexUpdateResult.withOldValue(oldAddress, oldSize);
+            } else {
+                return IndexUpdateResult.noOldValue();
+            }
+        } finally {
+            lock.unlockWrite(stamp);
+        }
+    }
+
+    @Override
+    public IndexRemoveResult removeAndGet(Integer key) {
+        if (key == null || key == EMPTY_KEY || key == DELETED_KEY) {
+            return IndexRemoveResult.notPresent();
+        }
+
+        long stamp = lock.writeLock();
+        try {
+            int index = probe(key);
+            if (index < 0) {
+                return IndexRemoveResult.notPresent();
+            }
+
+            long oldAddress = addresses[index];
+            int oldSize = sizes[index];
+
+            keys[index] = DELETED_KEY;
+            addresses[index] = 0;
+            sizes[index] = 0;
+            size--;
+
+            return IndexRemoveResult.removed(oldAddress, oldSize);
+        } finally {
+            lock.unlockWrite(stamp);
+        }
+    }
+
+    @Override
+    public void forEach(IndexEntryConsumer consumer) {
+        if (consumer == null) {
+            return;
+        }
+
+        long stamp = lock.readLock();
+        try {
+            for (int i = 0; i < keys.length; i++) {
+                int key = keys[i];
+                if (key != EMPTY_KEY && key != DELETED_KEY) {
+                    consumer.accept(key, addresses[i], sizes[i]);
+                }
+            }
+        } finally {
+            lock.unlockRead(stamp);
+        }
+    }
+
+    @Override
     public boolean containsKey(Integer key) {
         return get(key) != 0;
     }

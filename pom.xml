@@ -7,7 +7,7 @@
 
     <groupId>com.yomahub</groupId>
     <artifactId>roguemap</artifactId>
-    <version>1.0.0-BETA1</version>
+    <version>1.0.0-BETA2</version>
     <packaging>jar</packaging>
 
     <name>RogueMap</name>
@@ -72,6 +72,22 @@
             <groupId>org.mapdb</groupId>
             <artifactId>mapdb</artifactId>
             <version>3.1.0</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Caffeine for comparison testing -->
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+            <version>2.9.3</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- FastUtil for comparison testing -->
+        <dependency>
+            <groupId>it.unimi.dsi</groupId>
+            <artifactId>fastutil</artifactId>
+            <version>8.5.15</version>
             <scope>test</scope>
         </dependency>
 

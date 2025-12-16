@@ -44,6 +44,52 @@ public interface Index<K> {
     long remove(K key);
 
     /**
+     * 原子性地更新索引并返回旧值信息
+     * <p>
+     * 此方法在单个锁保护下完成以下操作：
+     * 1. 获取旧值的地址和大小
+     * 2. 更新索引为新值
+     * 3. 返回旧值信息
+     * </p>
+     * <p>
+     * 这避免了在 get() 和 put() 之间的竞态条件，确保多线程同时更新同一个 key 时的安全性。
+     * </p>
+     *
+     * @param key        键
+     * @param newAddress 新值的内存地址
+     * @param newSize    新值的大小
+     * @return 更新结果，包含旧值的地址和大小信息
+     */
+    IndexUpdateResult putAndGetOld(K key, long newAddress, int newSize);
+
+    /**
+     * 原子性地删除键并返回被删除值的信息
+     * <p>
+     * 此方法在单个锁保护下完成以下操作：
+     * 1. 获取值的地址和大小
+     * 2. 从索引中删除键
+     * 3. 返回被删除值的信息
+     * </p>
+     * <p>
+     * 这避免了在 get() 和 remove() 之间的竞态条件。
+     * </p>
+     *
+     * @param key 键
+     * @return 删除结果，包含被删除值的地址和大小信息
+     */
+    IndexRemoveResult removeAndGet(K key);
+
+    /**
+     * 遍历所有索引条目
+     * <p>
+     * 用于在 clear() 操作前释放所有内存地址
+     * </p>
+     *
+     * @param consumer 消费每个条目的回调函数
+     */
+    void forEach(IndexEntryConsumer consumer);
+
+    /**
      * 检查键是否存在于索引中
      *
      * @param key 键

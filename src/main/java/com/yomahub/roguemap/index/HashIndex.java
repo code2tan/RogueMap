@@ -92,6 +92,51 @@ public class HashIndex<K> implements Index<K> {
     }
 
     @Override
+    public IndexUpdateResult putAndGetOld(K key, long newAddress, int newSize) {
+        if (key == null) {
+            throw new IllegalArgumentException("键不能为 null");
+        }
+        if (newAddress == 0) {
+            throw new IllegalArgumentException("无效的地址: 0");
+        }
+
+        Entry newEntry = new Entry(newAddress, newSize);
+        Entry oldEntry = map.put(key, newEntry);
+
+        if (oldEntry == null) {
+            size.incrementAndGet();
+            return IndexUpdateResult.noOldValue();
+        } else {
+            return IndexUpdateResult.withOldValue(oldEntry.address, oldEntry.size);
+        }
+    }
+
+    @Override
+    public IndexRemoveResult removeAndGet(K key) {
+        if (key == null) {
+            return IndexRemoveResult.notPresent();
+        }
+
+        Entry entry = map.remove(key);
+        if (entry != null) {
+            size.decrementAndGet();
+            return IndexRemoveResult.removed(entry.address, entry.size);
+        }
+        return IndexRemoveResult.notPresent();
+    }
+
+    @Override
+    public void forEach(IndexEntryConsumer consumer) {
+        if (consumer == null) {
+            return;
+        }
+
+        for (Map.Entry<K, Entry> entry : map.entrySet()) {
+            consumer.accept(entry.getKey(), entry.getValue().address, entry.getValue().size);
+        }
+    }
+
+    @Override
     public boolean containsKey(K key) {
         return key != null && map.containsKey(key);
     }
